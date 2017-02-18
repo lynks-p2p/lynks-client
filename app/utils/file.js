@@ -1,4 +1,6 @@
-
+var crypto = require('crypto');
+const zlib = require('zlib');
+const fs = require('fs');
 function createID() {
   return 0;
 }
@@ -9,45 +11,63 @@ function getFileList() {
 
 
 
-  function compress(decompressedfilename,compressedfilename, callback) {
+  function compress(filepath, callback) {
   // compress file with zlib
   console.log("started compression");
-  const zlib = require('zlib');
   const gzip = zlib.createGzip();
-  const fs = require('fs');
-  const decompressedfile = fs.createReadStream(decompressedfilename);
-  const compressedfile = fs.createWriteStream(compressedfilename);
+  var decompressedfile = fs.createReadStream(filepath);
+  var compressedfile = fs.createWriteStream(filepath+".Gzip");
   decompressedfile.pipe(gzip).pipe(compressedfile);
-  console.log("Done compressing");
-
   if (callback) {
          decompressedfile.on('end', callback);
    }
-  return compressedfile;
+   console.log("Done compressing");
 }
 
-  function decompress(compressedfilename,decompressedfilename, callback) {
+  function decompress(filepath, callback) {
   // decompress file with zlib
-    console.log("started decompression");
-  const zlib = require('zlib');
+  console.log("started decompression");
   const gunzip = zlib.createGunzip();
-  const fs = require('fs');
-  const compressedfile = fs.createReadStream(compressedfilename);
-  const decompressedfile = fs.createWriteStream(decompressedfilename);
+  var compressedfile = fs.createReadStream(filepath+"_decrypted");
+  var decompressedfile = fs.createWriteStream(filepath+"_copy");
   compressedfile.pipe(gunzip).pipe(decompressedfile);
-  console.log("Done decompressing");
+  fs.unlinkSync(filepath+"_decrypted");
   if (callback) {
        compressedfile.on('end', callback);
    }
-  return decompressedfile;
+  console.log("Done decompressing");
 }
 
-function encrypt(file, key) {
-  return file + key;
+function encrypt(filepath, key, callback) {
+  console.log("starting encryption");
+  var  algorithm = 'aes-256-ctr';
+  var password = key;
+  var encrypt = crypto.createCipher(algorithm, password);
+  var compressedfile_read = fs.createReadStream(filepath+".Gzip");
+  var compressedfile_write = fs.createWriteStream(filepath+"_encrypted");
+  compressedfile_read.pipe(encrypt).pipe(compressedfile_write);
+  fs.unlinkSync(filepath+".Gzip");
+  if (callback) {
+        compressedfile_read.on('end', callback);
+    }
+  console.log("done encrypting");
+  return encrypt;
 }
 
-function decrypt(file, key) {
-  return file - key;
+function decrypt(filepath, key, callback) {
+  console.log("starting decryption");
+  var  algorithm = 'aes-256-ctr';
+  var password = key;
+  var decrypt = crypto.createDecipher(algorithm, password);
+  var compressedfile_read = fs.createReadStream(filepath+"_encrypted");
+  var compressedfile_write = fs.createWriteStream(filepath+"_decrypted");
+  compressedfile_read.pipe(decrypt).pipe(compressedfile_write);
+  fs.unlinkSync(filepath+"_encrypted");
+  if (callback) {
+        compressedfile_read.on('end', callback);
+    }
+  console.log("done decrypting");
+  return decrypt;
 }
 
 function shred(file) {
