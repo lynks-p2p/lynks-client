@@ -1,3 +1,5 @@
+import ReedSolomon from 'reed-solomon';
+import fs from 'fs';
 
 function createID() {
   return 0;
@@ -29,11 +31,44 @@ function decrypt(file, key) {
   return file - key;
 }
 
-function shred(file) {
-  // erasure coding with reed solomon
-  const shreds = file;
+function shredFile(parity, shredLength, inputFile) {
+  const bitmap = fs.readFileSync(inputFile);
+  const dataBuf = new Buffer(bitmap);
+  const shardLength = shredLength;
+  const parityShards = parity;
+  const dataShards = Math.ceil(dataBuf.length / shardLength);
+  const totalShards = dataShards + parityShards;
+  // Create the parity buffer
+  const parityBuffer = Buffer.alloc(parityShards * shardLength);
+  const buffer = Buffer.concat([
+    dataBuf,
+    parityBuffer
+  ], totalShards);
+  const bufferOffset = 0;
+  const bufferSize = shardLength * totalShards;
+  const shardOffset = 0;
+  const shardSize = shardLength - shardOffset;
 
-  return shreds;
+  const rs = new ReedSolomon(dataShards, parityShards);
+  rs.encode(
+    buffer,
+    bufferOffset,
+    bufferSize,
+    shardLength,
+    shardOffset,
+    shardSize,
+    (error) => {
+      if (error) throw error;
+      // Parity shards now contain parity data.
+    }
+  );
+  // writing data shards as files
+  for (let i = 0; i < totalShards; i += shardLength) {
+    // Generate shred IDs to name the shreds
+    fs.writeFileSync(`i_${Math.random()}`, buffer[i]);
+  }
+
+  return inputFile;
 }
 
 function updateFileMap(fileMapEntry) {
@@ -43,4 +78,4 @@ function updateFileMap(fileMapEntry) {
   return updatedFileMap;
 }
 
-export { createID, compress, decompress, shred, encrypt, decrypt, getFileList, updateFileMap };
+export { createID, compress, decompress, shredFile, encrypt, decrypt, getFileList, updateFileMap };
