@@ -24,16 +24,16 @@ class shredMessage extends Message {   //inherits from message
       this.shredID="";
       this.shredpath="";
     }
-    setValues(operationID,data,shredname,shredpath){
+    setValues(operationID,data,shredID,shredpath){
       super.setValues(operationID,data);
-      this.shredname=shredname;
+      this.shredID=shredID;
       this.shredpath=shredpath;
     }
     deserialize (buf) {
         var msg = JSON.parse(buf);
         super.deserialize(buf);
-        this.shredname = msg.shredname;
+        this.shredID = msg.shredID;
         this.shredpath = msg.shredpath;
     }
   }
-module.exports =  {Message,fileMessage};
+module.exports =  {Message,shredMessage};
