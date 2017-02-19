@@ -17,23 +17,23 @@ class Message {
         this.data = msg.data;
     }
 }
-class fileMessage extends Message {   //inherits from message
+class shredMessage extends Message {   //inherits from message
     constructor()
     {
       super();
-      this.filename="";
-      this.filepath="";
+      this.shredID="";
+      this.shredpath="";
     }
-    setValues(operationID,data,filename,filepath){
+    setValues(operationID,data,shredname,shredpath){
       super.setValues(operationID,data);
-      this.filename=filename;
-      this.filepath=filepath;
+      this.shredname=shredname;
+      this.shredpath=shredpath;
     }
     deserialize (buf) {
         var msg = JSON.parse(buf);
         super.deserialize(buf);
-        this.filename = msg.filename;
-        this.filepath = msg.filepath;
+        this.shredname = msg.shredname;
+        this.shredpath = msg.shredpath;
     }
   }
 module.exports =  {Message,fileMessage};
