@@ -31,8 +31,7 @@ class fileMessage extends Message {   //inherits from message
     }
     deserialize (buf) {
         var msg = JSON.parse(buf);
-        this.operationID = msg.operationID;
-        this.data = msg.data;
+        super.deserialize(buf);
         this.filename = msg.filename;
         this.filepath = msg.filepath;
     }
