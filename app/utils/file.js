@@ -31,23 +31,25 @@ function decrypt(file, key) {
   return file - key;
 }
 
+// inputFile is the path-name of the file to be shredded
 function shredFile(parity, shredLength, inputFile) {
   const bitmap = fs.readFileSync(inputFile);
-  const dataBuf = new Buffer(bitmap);
+  const dataBuffer = new Buffer(bitmap);
   const shardLength = shredLength;
-  const parityShards = parity;
-  const dataShards = Math.ceil(dataBuf.length / shardLength);
+  const dataShards = Math.ceil(dataBuffer.length / shardLength);
+  const parityShards = parity * dataShards;
   const totalShards = dataShards + parityShards;
   // Create the parity buffer
   const parityBuffer = Buffer.alloc(parityShards * shardLength);
-  const buffer = Buffer.concat([
-    dataBuf,
-    parityBuffer
-  ], totalShards);
   const bufferOffset = 0;
   const bufferSize = shardLength * totalShards;
   const shardOffset = 0;
   const shardSize = shardLength - shardOffset;
+
+  const buffer = Buffer.concat([
+    dataBuffer,
+    parityBuffer
+  ], bufferSize);
 
   const rs = new ReedSolomon(dataShards, parityShards);
   rs.encode(
@@ -65,11 +67,10 @@ function shredFile(parity, shredLength, inputFile) {
   // writing data shards as files
   for (let i = 0; i < totalShards; i += shardLength) {
     // Generate shred IDs to name the shreds
-    fs.writeFileSync(`i_${Math.random()}`, buffer[i]);
+    fs.writeFileSync(`${i}_${Math.random()}`, buffer[i]);
   }
-
-  return inputFile;
 }
+
 
 function updateFileMap(fileMapEntry) {
   // update local filemap
@@ -78,4 +79,12 @@ function updateFileMap(fileMapEntry) {
   return updatedFileMap;
 }
 
-export { createID, compress, decompress, shredFile, encrypt, decrypt, getFileList, updateFileMap };
+export {
+  createID,
+  compress,
+  decompress,
+  shredFile,
+  encrypt,
+  decrypt,
+  getFileList,
+  updateFileMap };
