@@ -32,6 +32,8 @@ function decrypt(file, key) {
 }
 
 // inputFile is the path-name of the file to be shredded
+// Parity is a multiple of the number of shreds in the original file
+// The % of shreds we can lose is = (Parity/(Parity+1))*100
 function shredFile(parity, shredLength, inputFile) {
   const bitmap = fs.readFileSync(inputFile);
   const dataBuffer = new Buffer(bitmap);
@@ -65,9 +67,9 @@ function shredFile(parity, shredLength, inputFile) {
     }
   );
   // writing data shards as files
-  for (let i = 0; i < totalShards; i += shardLength) {
+  for (let i = 0; i < totalShards; i += i) {
     // Generate shred IDs to name the shreds
-    fs.writeFileSync(`${i}_${Math.random()}`, buffer[i]);
+    fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength, (i + 1) * shardLength));
   }
 }
 
