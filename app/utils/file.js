@@ -73,6 +73,38 @@ function shredFile(parity, shredLength, inputFile) {
   }
 }
 
+// shredsBuffer: a Buffer containing the shreds to be recovered,
+// targets: a variable containing the indecies of the missing shreds
+// dataShreds: Math.ceil(dataBuffer.length / shardLength)
+// recoverdFile: the name of the file to be recovered
+function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, recoveredFile) {
+  const buffer = new Buffer(shredsBuffer);
+  const shardLength = shredLength;
+  const dataShards = dataShreds;
+  const parityShards = parity * dataShards;
+  const bufferOffset = 0;
+  const totalShards = dataShards + parityShards;
+  const bufferSize = shardLength * totalShards;
+  const shardOffset = 0;
+  const shardSize = shardLength - shardOffset;
+  const rs = new ReedSolomon(dataShards, parityShards);
+
+  rs.decode(
+    buffer,
+    bufferOffset,
+    bufferSize,
+    shardLength,
+    shardOffset,
+    shardSize,
+    targets,
+    (error) => {
+      if (error) throw error;
+    }
+  );
+  const dataLength = dataShards * shardLength;
+  const restoredShreds = buffer.slice(bufferOffset, dataLength - 1);
+  fs.writeFileSync(recoveredFile, restoredShreds);
+}
 
 function updateFileMap(fileMapEntry) {
   // update local filemap
@@ -86,6 +118,7 @@ export {
   compress,
   decompress,
   shredFile,
+  recoverFile,
   encrypt,
   decrypt,
   getFileList,
