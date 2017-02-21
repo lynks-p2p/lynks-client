@@ -5078,7 +5078,7 @@ mute-stream@0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.6.tgz#48962b19e169fd1dfc240b3f1e7317627bbc47db"
 
-nan@^2.3.0:
+nan@^2.0.0, nan@^2.3.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.5.0.tgz#aa8f1e34531d807e9e27755b234b4a6ec0c152a8"
 
@@ -6214,6 +6214,13 @@ redux@^3.6.0:
     loose-envify "^1.1.0"
     symbol-observable "^1.0.2"
 
+reed-solomon@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/reed-solomon/-/reed-solomon-3.1.1.tgz#25a1150fc461943edad536b68f146838b5f705b7"
+  dependencies:
+    nan "^2.0.0"
+    ronomon-queue "^0.1.1"
+
 regenerate@^1.2.1:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/regenerate/-/regenerate-1.3.2.tgz#d1941c67bad437e1be76433add5b385f95b19260"
@@ -6449,6 +6456,10 @@ ripemd160@0.2.0:
 ripemd160@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/ripemd160/-/ripemd160-1.0.1.tgz#93a4bbd4942bc574b69a8fa57c71de10ecca7d6e"
+
+ronomon-queue@^0.1.1:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/ronomon-queue/-/ronomon-queue-0.1.2.tgz#6f17aa50a06f6188b7ce17cfa51c34ac547cced8"
 
 run-async@^0.1.0:
   version "0.1.0"
