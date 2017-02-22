@@ -1,6 +1,7 @@
 import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
+import ObjectID from 'bson-objectid';
 
 import fs from 'fs';
 
@@ -163,12 +164,78 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
-function updateFileMap(fileMapEntry) {
-  // update local filemap
+const fileMapPath = 'filemap';
 
-  const updatedFileMap = fileMapEntry + 1;
-  return updatedFileMap;
+function storeFileMap(fileMap) {
+  // store FileMap in specified filemap path
+  fs.writeFileSync(fileMapPath, JSON.stringify(fileMap));
 }
+
+function readFileMap() {
+  // load filemap from disk
+  const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
+  return fileMap;
+}
+
+function createFileMap() {
+  // init file map
+  const fileMap = {};
+
+  storeFileMap(fileMap);
+  // file = {
+  //   id:
+  //   name:
+  //   shreds: []
+  //   salt:
+  //   parity:
+  //   dataShards:
+  //   shredLength:
+  // }
+}
+
+function getFileMap() {
+  // get FileMap from server, decrypt it
+  // load FileMap into App runtime
+
+  // optimization for future: only get hash of FileMap to check if local FileMap is up-to-date
+}
+
+function syncFileMap() {
+  // update remote FileMap
+  // 1. encrypt local FileMap
+  // 2. make update request to server
+
+  // optimization: have queue to manage file uploads and "batch" loggin into fileMap
+
+}
+
+function addFileMapEntry(fileID, fileMapEntry) {
+  const fileMap = readFileMap();
+
+  fileMap[fileID] = fileMapEntry;
+
+  storeFileMap(fileMap);
+
+  // self-explanatory
+  // file = {
+ //   name:
+ //   shreds: []
+ //   salt:
+ //   parity:
+ //   dataShards:
+ //   shredLength:
+ // }
+}
+
+function removeFileMapEntry(fileID) {
+  // self-explanatory
+  const fileMap = readFileMap();
+
+  fileMap[fileID] = undefined;
+
+  storeFileMap(fileMap);
+}
+
 
 export {
   createID,
@@ -179,4 +246,8 @@ export {
   encrypt,
   decrypt,
   getFileList,
-  updateFileMap };
+  createFileMap,
+  getFileMap,
+  syncFileMap,
+  addFileMapEntry,
+  removeFileMapEntry };
