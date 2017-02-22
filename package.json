@@ -5,6 +5,7 @@
   "description": "Lynks desktop client, providing access to the Lynks eco-system and services",
   "main": "main.js",
   "scripts": {
+    "babel-wrap": "./node_modules/.bin/babel-node",
     "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --retries 2 --compilers js:babel-register --recursive --require ./test/setup.js test/**/*.spec.js",
     "test-all": "npm run lint && npm run flow && npm run test && npm run build",
     "test-watch": "npm test -- --watch",
@@ -93,6 +94,7 @@
   "homepage": "https://github.com/lynks-p2p/lynks-client#readme",
   "devDependencies": {
     "asar": "^0.13.0",
+    "babel-cli": "^6.23.0",
     "babel-core": "^6.22.1",
     "babel-eslint": "^7.1.1",
     "babel-loader": "^6.2.10",
