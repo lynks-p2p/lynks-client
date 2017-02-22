@@ -163,12 +163,35 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
-function updateFileMap(fileMapEntry) {
-  // update local filemap
+function createFileMap() {
 
-  const updatedFileMap = fileMapEntry + 1;
-  return updatedFileMap;
 }
+
+function getFileMap() {
+  // get FileMap from server, decrypt it
+  // load FileMap into App runtime
+
+  // optimization for future: only get hash of FileMap to check if local FileMap is up-to-date
+}
+
+function syncFileMap() {
+  // update remote FileMap
+  // 1. encrypt local FileMap
+  // 2. make update request to server
+
+  // optimization: have queue to manage file uploads and "batch" loggin into fileMap
+
+}
+
+function addFileMapEntry() {
+  // self-explanatory
+}
+
+function removeFileMapEntry() {
+  // self-explanatory
+
+}
+
 
 export {
   createID,
@@ -179,4 +202,8 @@ export {
   encrypt,
   decrypt,
   getFileList,
-  updateFileMap };
+  createFileMap,
+  getFileMap,
+  syncFileMap,
+  addFileMapEntry,
+  removeFileMapEntry };
