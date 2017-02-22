@@ -167,16 +167,18 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
 const fileMapPath = 'filemap';
 
 function storeFileMap(fileMap) {
+  // store FileMap in specified filemap path
   fs.writeFileSync(fileMapPath, JSON.stringify(fileMap));
 }
 
 function readFileMap() {
+  // load filemap from disk
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
-  console.log(fileMap);
   return fileMap;
 }
 
 function createFileMap() {
+  // init file map
   const fileMap = {};
 
   storeFileMap(fileMap);
