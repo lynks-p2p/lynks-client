@@ -1,6 +1,7 @@
 import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
+import ObjectID from 'bson-objectid';
 
 import fs from 'fs';
 
@@ -163,8 +164,31 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
-function createFileMap() {
+const fileMapPath = 'filemap';
 
+function storeFileMap(fileMap) {
+  fs.writeFileSync(fileMapPath, JSON.stringify(fileMap));
+}
+
+function readFileMap() {
+  const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
+  console.log(fileMap);
+  return fileMap;
+}
+
+function createFileMap() {
+  const fileMap = {};
+
+  storeFileMap(fileMap);
+  // file = {
+  //   id:
+  //   name:
+  //   shreds: []
+  //   salt:
+  //   parity:
+  //   dataShards:
+  //   shredLength:
+  // }
 }
 
 function getFileMap() {
@@ -183,13 +207,31 @@ function syncFileMap() {
 
 }
 
-function addFileMapEntry() {
+function addFileMapEntry(fileID, fileMapEntry) {
+  const fileMap = readFileMap();
+
+  fileMap[fileID] = fileMapEntry;
+
+  storeFileMap(fileMap);
+
   // self-explanatory
+  // file = {
+ //   name:
+ //   shreds: []
+ //   salt:
+ //   parity:
+ //   dataShards:
+ //   shredLength:
+ // }
 }
 
-function removeFileMapEntry() {
+function removeFileMapEntry(fileID) {
   // self-explanatory
+  const fileMap = readFileMap();
 
+  fileMap[fileID] = undefined;
+
+  storeFileMap(fileMap);
 }
 
 
