@@ -9,7 +9,7 @@ const socketclient = require('socket.io-client');
 const dl = require('delivery');
 const fs = require('fs');
 
-function sendShre d(ip, port, filename, filepath) {
+function sendShred(ip, port, filename, filepath) {
   const address = `http://${ip}:${port}`;
   const socket = socketclient(address);
 
