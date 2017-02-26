@@ -27,36 +27,23 @@ function compress(filepath, callback) {
 
 function decompress(filepath, callback) {
   // decompress file with zlib
-  var bytesRead = 500;
-  var decompressStream = zlib.createGunzip()
-    .on('data', function (chunk) {
-        parseHeader(chunk);
-        decompressStream.pause();
-    }).on('error', function(err) {
-        handleGunzipError(err, file, chunk);
-    });
 
-fs.createReadStream(filepath, {start: 0, end: bytesRead, chunkSize: bytesRead + 1})
-    .on('data', function (chunk) {
-        decompressStream.write(chunk);
-    });
+   const gunzip = zlib.createGunzip();
+   let newfilepath;
+  if (filepath.indexOf('_decrypted') > -1) {
+    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
+  } else {
+    newfilepath = `${filepath}_copy`;
+  }
+  const compressedfile = fs.createReadStream(filepath);
+  const decompressedfile = fs.createWriteStream(newfilepath);
+  compressedfile.pipe(gunzip).pipe(decompressedfile);
+  if (callback) {
+    compressedfile.on('end', callback);
+    fs.unlinkSync(filepath);
+  }
 
-  // const gunzip = zlib.createGunzip();
-  // let newfilepath;
-  // if (filepath.indexOf('_decrypted') > -1) {
-  //   newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
-  // } else {
-  //   newfilepath = `${filepath}_copy`;
-  // }
-  // const compressedfile = fs.createReadStream(filepath);
-  // const decompressedfile = fs.createWriteStream(newfilepath);
-  // compressedfile.pipe(gunzip).pipe(decompressedfile);
-  // fs.unlinkSync(filepath);
-  // if (callback) {
-  //   compressedfile.on('end', callback);
-  // }
-  // return decompressed file name
-  // return newfilepath;
+  return newfilepath;
 }
 
 function encrypt(filepath, key, callback) {
@@ -72,11 +59,13 @@ function encrypt(filepath, key, callback) {
   const compressedfileRead = fs.createReadStream(filepath);
   const compressedfileWrite = fs.createWriteStream(newfilepath);
   compressedfileRead.pipe(encryptVar).pipe(compressedfileWrite);
-  fs.unlinkSync(filepath);
+
   if (callback) {
     compressedfileRead.on('end', callback);
+    fs.unlinkSync(filepath);
   }
   // return encrypted file name
+
   return newfilepath;
 }
 
@@ -94,11 +83,15 @@ function decrypt(filepath, key, callback) {
   const compressedfileRead = fs.createReadStream(filepath);
   const compressedfileWrite = fs.createWriteStream(newfilepath);
   compressedfileRead.pipe(decryptVar).pipe(compressedfileWrite);
-  fs.unlinkSync(filepath);
+
   if (callback) {
     compressedfileRead.on('end', callback);
+    console.log(1);
+    fs.unlinkSync(filepath);
+    console.log(2);
   }
   // return decrypted file name
+
   return newfilepath;
 }
 
@@ -230,5 +223,5 @@ function gatherFile(filepath){
 }
 
 
-processFile('/home/yehia/git-Hub/lynks-client/flash.jpg');
-// gatherFile('/home/yehia/git-Hub/lynks-client/flash.jpg_encrypted');
+//processFile("/home/james/Downloads/pic.jpg");
+gatherFile("/home/james/Downloads/pic.jpg_encrypted");
