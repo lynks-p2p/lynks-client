@@ -2,98 +2,9 @@ import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
 import ObjectID from 'bson-objectid';
+import fs from 'fs';
 var async = require('async');
 
-
-import fs from 'fs';
-var zlib_options = {
-    flush: zlib.Z_SYNC_FLUSH,
-    finishFlush: zlib.Z_SYNC_FLUSH
-  }
-
-function compress(filepath, callback) {
-  // compress file with zlib
-  const gzip = zlib.createGzip();
-  const newfilepath = `${filepath}.Gzip`;
-  const decompressedfile = fs.createReadStream(filepath);
-  const compressedfile = fs.createWriteStream(newfilepath);
-  decompressedfile.pipe(gzip).pipe(compressedfile);
-  if (callback) {
-    decompressedfile.on('end', callback);
-  }
-  // return compressed file name
-  return newfilepath;
-}
-
-function decompress(filepath, callback) {
-  // decompress file with zlib
-
-   const gunzip = zlib.createGunzip();
-   let newfilepath;
-  if (filepath.indexOf('_decrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
-  } else {
-    newfilepath = `${filepath}_copy`;
-  }
-  const compressedfile = fs.createReadStream(filepath);
-  const decompressedfile = fs.createWriteStream(newfilepath);
-  compressedfile.pipe(gunzip).pipe(decompressedfile);
-  if (callback) {
-    compressedfile.on('end', callback);
-    fs.unlinkSync(filepath);
-  }
-
-  return newfilepath;
-}
-
-function encrypt(filepath, key, callback) {
-  const algorithm = 'aes-256-ctr';
-  const password = key;
-  let newfilepath;
-  if (filepath.indexOf('.Gzip') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 5)}_encrypted`;
-  } else {
-    newfilepath = `${filepath}_encrypted`;
-  }
-  const encryptVar = crypto.createCipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(encryptVar).pipe(compressedfileWrite);
-
-  if (callback) {
-    compressedfileRead.on('end', callback);
-    fs.unlinkSync(filepath);
-  }
-  // return encrypted file name
-
-  return newfilepath;
-}
-
-function decrypt(filepath, key, callback) {
-  const algorithm = 'aes-256-ctr';
-  const password = key;
-  let newfilepath;
-  if (filepath.indexOf('_encrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_decrypted`;
-    console.log("yes "+newfilepath);
-  } else {
-    newfilepath = `${filepath}_decrypted`;
-  }
-  const decryptVar = crypto.createDecipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(decryptVar).pipe(compressedfileWrite);
-
-  if (callback) {
-    compressedfileRead.on('end', callback);
-    console.log(1);
-    fs.unlinkSync(filepath);
-    console.log(2);
-  }
-  // return decrypted file name
-
-  return newfilepath;
-}
 
 function shredFile(parity, shredLength, inputFile) {
   // inputFile is the path-name of the file to be shredded
@@ -168,60 +79,66 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
 }
 
 
-function processFile(filepath){
-  var c;
-  var e;
+function processFile(filepath,key, callback) {
+  const algorithm = 'aes-256-ctr';
+  const password = key;
+  let newfilepath = `${filepath}_encrypted`; // can be edited later
+
+  const gzip = zlib.createGzip();
+  const encryptVar = crypto.createCipher(algorithm, password);
+  const decompressedfile = fs.createReadStream(filepath);
+  const writeFile = fs.createWriteStream(newfilepath);
+
+  decompressedfile.pipe(gzip).pipe(encryptVar).pipe(writeFile);
+
+  if (callback) {
+    decompressedfile.on('end', callback);
+  }
+}
+
+function gatherFile(filepath,key, callback) {
+  const algorithm = 'aes-256-ctr';
+  const password = key;
+
+
+  const decryptVar = crypto.createDecipher(algorithm, password);
+  const gunzip = zlib.createGunzip();
+
+  const compressedEncrypt = fs.createReadStream(filepath);
+  const writeFile = fs.createWriteStream('./_copy');
+
+  compressedEncrypt.pipe(decryptVar).pipe(gunzip).pipe(writeFile);
+
+
+}
+
+function testing_CompEnc_DencryDeCom(filepath,CompEnc){
+  //not working , but the case is that
   async.series
       ([
           function (callback)
           {
-              c = compress(filepath, callback);   //compress
+              processFile(filepath,"abrakadabra",callback)
           }
           ,
           function (callback)
           {
-              e = encrypt(c,"abrakadabra",callback);  //encrypt
+            gatherFile(CompEnc,"abrakadabra",callback)
           }
-
-
 
       ]
       ,
       function(err)
       {
-        console.log("finished compresion & encryption synchronously");
-      });
-
-
-
-
-
-
-}
-
-function gatherFile(filepath){
-  var c;
-  var e;
-  async.series
-      ([
-          function (callback)
-          {
-              e = decrypt(filepath,"abrakadabra",callback);  //decrypt
-          }
-          ,
-          function (callback)
-          {
-              c = decompress(e, callback);   //decompress
-          }
-
-      ]
-      ,
-      function(err)
-      {
-        console.log("finished decompresion & decryption synchronously");
+        console.log("finished processing File then gathering File synchronously");
       });
 }
 
 
-//processFile("/home/james/Downloads/pic.jpg");
-gatherFile("/home/james/Downloads/pic.jpg_encrypted");
+ testing_CompEnc_DencryDeCom("./flash.jpg","./flash.jpg_encrypted")
+
+// processFile("./card.jpg","abrakadabra",null)
+// gatherFile("./card.jpg_encrypted","abrakadabra",null)
+
+// processFile("./flash.jpg","abrakadabra",null)
+// gatherFile("./flash.jpg_encrypted","abrakadabra",null)
