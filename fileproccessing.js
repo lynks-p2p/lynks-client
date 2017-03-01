@@ -6,10 +6,7 @@ var async = require('async');
 
 
 import fs from 'fs';
-var zlib_options = {
-    flush: zlib.Z_SYNC_FLUSH,
-    finishFlush: zlib.Z_SYNC_FLUSH
-  }
+
 
 function compress(filepath, callback) {
   // compress file with zlib
@@ -31,9 +28,9 @@ function decompress(filepath, callback) {
    const gunzip = zlib.createGunzip();
    let newfilepath;
   if (filepath.indexOf('_decrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
+    newfilepath = `${filepath.substr(0, filepath.length - 10)} (copy)`;
   } else {
-    newfilepath = `${filepath}_copy`;
+    newfilepath = `${filepath} (copy)`;
   }
   const compressedfile = fs.createReadStream(filepath);
   const decompressedfile = fs.createWriteStream(newfilepath);
@@ -75,7 +72,6 @@ function decrypt(filepath, key, callback) {
   let newfilepath;
   if (filepath.indexOf('_encrypted') > -1) {
     newfilepath = `${filepath.substr(0, filepath.length - 10)}_decrypted`;
-    console.log("yes "+newfilepath);
   } else {
     newfilepath = `${filepath}_decrypted`;
   }
@@ -86,9 +82,7 @@ function decrypt(filepath, key, callback) {
 
   if (callback) {
     compressedfileRead.on('end', callback);
-    console.log(1);
     fs.unlinkSync(filepath);
-    console.log(2);
   }
   // return decrypted file name
 
@@ -167,61 +161,25 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
-
-function processFile(filepath){
-  var c;
-  var e;
-  async.series
-      ([
-          function (callback)
-          {
-              c = compress(filepath, callback);   //compress
-          }
-          ,
-          function (callback)
-          {
-              e = encrypt(c,"abrakadabra",callback);  //encrypt
-          }
-
-
-
-      ]
-      ,
-      function(err)
-      {
-        console.log("finished compresion & encryption synchronously");
-      });
-
-
-
-
-
-
+function processFile(filepath,key,callback){
+  var c = compress(filepath, () => {
+  var e =  encrypt(c, key, () => {
+     //shred file here
+     return callback(e);
+   });
+ });
 }
 
-function gatherFile(filepath){
-  var c;
-  var e;
-  async.series
-      ([
-          function (callback)
-          {
-              e = decrypt(filepath,"abrakadabra",callback);  //decrypt
-          }
-          ,
-          function (callback)
-          {
-              c = decompress(e, callback);   //decompress
-          }
-
-      ]
-      ,
-      function(err)
-      {
-        console.log("finished decompresion & decryption synchronously");
+function gatherFile(filepath,key,callback){
+  var d = decrypt(filepath, key, () => {
+      decompress(d, () => {
+        //recover file here
+        callback();
       });
+    });
 }
 
 
-//processFile("/home/james/Downloads/pic.jpg");
-gatherFile("/home/james/Downloads/pic.jpg_encrypted");
+processFile("flash.jpg",'123key',  function(response){
+  gatherFile(response,'123key', () =>{});
+});
