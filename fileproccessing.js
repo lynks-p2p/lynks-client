@@ -8,24 +8,23 @@ var async = require('async');
 import fs from 'fs';
 
 
-function compress(filepath,key, callback) {
+function compress(filepath, callback) {
   // compress file with zlib
-  console.log("function compress got ",filepath);
   const gzip = zlib.createGzip();
   const newfilepath = `${filepath}.Gzip`;
   const decompressedfile = fs.createReadStream(filepath);
   const compressedfile = fs.createWriteStream(newfilepath);
   decompressedfile.pipe(gzip).pipe(compressedfile);
   if (callback) {
-    decompressedfile.on('end', function () { callback(null,newfilepath,key) });
+    decompressedfile.on('end', callback);
   }
-
-
+  // return compressed file name
+  return newfilepath;
 }
 
 function decompress(filepath, callback) {
   // decompress file with zlib
-  console.log("function decompress got ",filepath);
+
    const gunzip = zlib.createGunzip();
    let newfilepath;
   if (filepath.indexOf('_decrypted') > -1) {
@@ -37,67 +36,45 @@ function decompress(filepath, callback) {
   const decompressedfile = fs.createWriteStream(newfilepath);
   compressedfile.pipe(gunzip).pipe(decompressedfile);
   if (callback) {
-    compressedfile.on('end',function () { callback(null,newfilepath) } );
-    // fs.unlinkSync(filepath);
+    compressedfile.on('end', callback);
+    fs.unlinkSync(filepath);
   }
 
+  return newfilepath;
 }
 
-function encrypt(filepath, key, callback) {
-  console.log("function encrypt got ",filepath," and ",key);
+function encrypt(buffer, key, callback) {
   const algorithm = 'aes-256-ctr';
   const password = key;
-  let newfilepath;
-  if (filepath.indexOf('.Gzip') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 5)}_encrypted`;
-  } else {
-    newfilepath = `${filepath}_encrypted`;
-  }
   const encryptVar = crypto.createCipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(encryptVar).pipe(compressedfileWrite);
-
-  if (callback) {
-    compressedfileRead.on('end',  function () { callback(null,newfilepath,key) });
-    // fs.unlinkSync(filepath);
-  }
-
+  var crypted = Buffer.concat([encryptVar.update(buffer),encryptVar.final()]);
+  return callback(crypted);
 }
 
-function decrypt(filepath, key, callback) {
-  console.log("function decrypt got ",filepath," and ",key);
+function decrypt(buffer, key, callback) {
   const algorithm = 'aes-256-ctr';
   const password = key;
-  let newfilepath;
-  if (filepath.indexOf('_encrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_decrypted`;
-  } else {
-    newfilepath = `${filepath}_decrypted`;
-  }
   const decryptVar = crypto.createDecipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(decryptVar).pipe(compressedfileWrite);
-
-  if (callback) {
-    compressedfileRead.on('end',  function () { callback(null,newfilepath) });
-    // fs.unlinkSync(filepath);
-  }
-
+  var dec = Buffer.concat([decryptVar.update(buffer) , decryptVar.final()]);
+  return callback(dec);
 }
 
-function shredFile(parity, shredLength, inputFile) {
+function shredFile(parity, shredLength, inputBuffer,callback) {
   // inputFile is the path-name of the file to be shredded
   // Parity is a multiple of the number of shreds in the original file
   // The % of shreds we can lose is = (Parity/(Parity+1))*100
 
-  const bitmap = fs.readFileSync(inputFile);
-  const dataBuffer = new Buffer(bitmap);
+  const dataBuffer = inputBuffer;
   const shardLength = shredLength;
   const dataShards = Math.ceil(dataBuffer.length / shardLength);
+  console.log("dataShards lenght is ", dataShards);
+
   const parityShards = parity * dataShards;
+  console.log("parityShards lenght is ", parityShards);
+
   const totalShards = dataShards + parityShards;
+  console.log("totalShards lenght is ", totalShards);
+
   // Create the parity buffer
   const parityBuffer = Buffer.alloc(parityShards * shardLength);
   const bufferOffset = 0;
@@ -124,10 +101,14 @@ function shredFile(parity, shredLength, inputFile) {
     }
   );
   // writing data shards as files
-  for (let i = 0; i < totalShards; i += i) {
-    // Generate shred IDs to name the shreds
-    fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength, (i + 1) * shardLength));
+  // Generate shred IDs to name the shreds
+  var outputarray=[];
+  for (let i = 0; i < totalShards; i += 1) {
+    var t=`${i}_${Math.random()}.shred`
+    outputarray.push(t)
+    fs.writeFileSync(t, buffer.slice(i * shardLength, (i + 1) * shardLength));
   }
+  return callback(outputarray);
 }
 
 function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, recoveredFile) {
@@ -159,53 +140,50 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
+function processFile(filepath,key,parity,shredLength,callback){
+  //read file into buffer
+  const fileBuffer = fs.readFileSync(filepath);
 
-
-
-function processFile(filepath,key,callback){
-  async.waterfall([
-    function(callback) {
-        callback(null, filepath, key);
-    },
-      compress,
-      encrypt
-  ], function (err, results) {
-
-      console.log(results);
-  });
-
-
+  // var c = compress(filepath, () => {
+   encrypt(fileBuffer, key, (e) => {
+     //shred file here
+     shredFile(parity, shredLength, e,(arr) => {
+       console.log("finished shreding");
+        return callback(arr);
+     })
+    //  return callback();
+   });
+ // });
 }
 
-function gatherFile(filepath,key,callback){
-  var d = decrypt(filepath, key, () => {
-      decompress(d, () => {
-        //recover file here
+function gatherFile(shreds_files,key,targets,parity,shredLength,recoveredFile,callback){
+
+  var shredsBuffer= fs.readFileSync(shreds_files[0]);
+  var t;
+
+  for (var i = 1; i < shreds_files.length; i++) {
+    t=fs.readFileSync(shreds_files[i]);
+    Buffer.concat([shredsBuffer,t],t.length+shredsBuffer.length);
+  }
+  console.log('size of concat. buffer is ',shredsBuffer.length);
+
+  const dataShreds=2;
+
+  decrypt(shredsBuffer, key, (d) => {
+      // decompress(d, () => {
+      recoverFile(d, targets, parity, shredLength, dataShreds, recoveredFile);
         callback();
-      });
+      // });
     });
 }
 
-// processFile("flash.jpg",'123key',  function(response){
-//   gatherFile(response,'123key', () =>{});
-// });
+const parity=3;
+const shredLength=86283;
+const target=0;
+const key='123key';
+const inputFile="flash2.jpg";
+const recoveredFile="My_recoveredFile";
 
-// processFile("flash.jpg",'123key', () =>{});
-function input(callback) {
-    callback(null, "flash.jpg",'123key');
-}
-
-function testing(filepath,key,callback) {
-    async.waterfall([
-        input,
-        compress,
-        encrypt,
-        decrypt,
-        decompress
-    ], callback);
-}
-
-testing("flash.jpg",'123key', function(err,result) {
-    if (!err) console.log("All ok!, result is ",result);
-
-})
+processFile(inputFile,key,parity,shredLength,function(shreds_files){
+  gatherFile(shreds_files,key,target,parity,shredLength,recoveredFile);
+});
