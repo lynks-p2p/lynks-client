@@ -32,9 +32,9 @@ function decompress(filepath, callback) {
   const gunzip = zlib.createGunzip();
   let newfilepath;
   if (filepath.indexOf('_decrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
+    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy.jpg`;
   } else {
-    newfilepath = `${filepath}_copy`;
+    newfilepath = `${filepath}_copy.jpg`;
   }
   const compressedfile = fs.createReadStream(filepath);
   const decompressedfile = fs.createWriteStream(newfilepath);
