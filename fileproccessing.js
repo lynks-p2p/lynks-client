@@ -8,23 +8,24 @@ var async = require('async');
 import fs from 'fs';
 
 
-function compress(filepath, callback) {
+function compress(filepath,key, callback) {
   // compress file with zlib
+  console.log("function compress got ",filepath);
   const gzip = zlib.createGzip();
   const newfilepath = `${filepath}.Gzip`;
   const decompressedfile = fs.createReadStream(filepath);
   const compressedfile = fs.createWriteStream(newfilepath);
   decompressedfile.pipe(gzip).pipe(compressedfile);
   if (callback) {
-    decompressedfile.on('end', callback);
+    decompressedfile.on('end', function () { callback(null,newfilepath,key) });
   }
-  // return compressed file name
-  return newfilepath;
+
+
 }
 
 function decompress(filepath, callback) {
   // decompress file with zlib
-
+  console.log("function decompress got ",filepath);
    const gunzip = zlib.createGunzip();
    let newfilepath;
   if (filepath.indexOf('_decrypted') > -1) {
@@ -36,14 +37,14 @@ function decompress(filepath, callback) {
   const decompressedfile = fs.createWriteStream(newfilepath);
   compressedfile.pipe(gunzip).pipe(decompressedfile);
   if (callback) {
-    compressedfile.on('end', callback);
-    fs.unlinkSync(filepath);
+    compressedfile.on('end',function () { callback(null,newfilepath) } );
+    // fs.unlinkSync(filepath);
   }
 
-  return newfilepath;
 }
 
 function encrypt(filepath, key, callback) {
+  console.log("function encrypt got ",filepath," and ",key);
   const algorithm = 'aes-256-ctr';
   const password = key;
   let newfilepath;
@@ -58,15 +59,14 @@ function encrypt(filepath, key, callback) {
   compressedfileRead.pipe(encryptVar).pipe(compressedfileWrite);
 
   if (callback) {
-    compressedfileRead.on('end', callback);
-    fs.unlinkSync(filepath);
+    compressedfileRead.on('end',  function () { callback(null,newfilepath,key) });
+    // fs.unlinkSync(filepath);
   }
-  // return encrypted file name
 
-  return newfilepath;
 }
 
 function decrypt(filepath, key, callback) {
+  console.log("function decrypt got ",filepath," and ",key);
   const algorithm = 'aes-256-ctr';
   const password = key;
   let newfilepath;
@@ -81,12 +81,10 @@ function decrypt(filepath, key, callback) {
   compressedfileRead.pipe(decryptVar).pipe(compressedfileWrite);
 
   if (callback) {
-    compressedfileRead.on('end', callback);
-    fs.unlinkSync(filepath);
+    compressedfileRead.on('end',  function () { callback(null,newfilepath) });
+    // fs.unlinkSync(filepath);
   }
-  // return decrypted file name
 
-  return newfilepath;
 }
 
 function shredFile(parity, shredLength, inputFile) {
@@ -161,13 +159,22 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
   fs.writeFileSync(recoveredFile, restoredShreds);
 }
 
+
+
+
 function processFile(filepath,key,callback){
-  var c = compress(filepath, () => {
-  var e =  encrypt(c, key, () => {
-     //shred file here
-     return callback(e);
-   });
- });
+  async.waterfall([
+    function(callback) {
+        callback(null, filepath, key);
+    },
+      compress,
+      encrypt
+  ], function (err, results) {
+
+      console.log(results);
+  });
+
+
 }
 
 function gatherFile(filepath,key,callback){
@@ -179,7 +186,26 @@ function gatherFile(filepath,key,callback){
     });
 }
 
+// processFile("flash.jpg",'123key',  function(response){
+//   gatherFile(response,'123key', () =>{});
+// });
 
-processFile("flash.jpg",'123key',  function(response){
-  gatherFile(response,'123key', () =>{});
-});
+// processFile("flash.jpg",'123key', () =>{});
+function input(callback) {
+    callback(null, "flash.jpg",'123key');
+}
+
+function testing(filepath,key,callback) {
+    async.waterfall([
+        input,
+        compress,
+        encrypt,
+        decrypt,
+        decompress
+    ], callback);
+}
+
+testing("flash.jpg",'123key', function(err,result) {
+    if (!err) console.log("All ok!, result is ",result);
+
+})
