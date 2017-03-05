@@ -1,5 +1,4 @@
 
-import fs from 'fs';
 import { fileToBuffer, bufferToFile, compress, decompress, encrypt, decrypt } from './app/utils/file';
 
 
