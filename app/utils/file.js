@@ -70,11 +70,14 @@ function decrypt(buffer, key, callback) {
 // inputFile is the path-name of the file to be shredded
 // Parity is a multiple of the number of shreds in the original file
 // The % of shreds we can lose is = (Parity/(Parity+1))*100
-function shredFile(parity, shredLength, inputFile) {
-  const bitmap = fs.readFileSync(inputFile);
-  const dataBuffer = new Buffer(bitmap);
-  const shardLength = shredLength;
-  const dataShards = Math.ceil(dataBuffer.length / shardLength);
+function shredFile(inputBuffer, dataShreds, parity, callback) {
+  // inputFile is the path-name of the file to be shredded
+  // Parity is a multiple of the number of shreds in the original file
+  // The % of shreds we can lose is = (Parity/(Parity+1))*100
+
+  const dataBuffer = inputBuffer;
+  const dataShards = dataShreds;
+  const shardLength = Math.ceil(dataBuffer.length / dataShards); // shredLength;
   const parityShards = parity * dataShards;
   const totalShards = dataShards + parityShards;
   // Create the parity buffer
@@ -102,24 +105,32 @@ function shredFile(parity, shredLength, inputFile) {
       // Parity shards now contain parity data.
     }
   );
+
+  const shredsList = [];
+
   // writing data shards as files
-  for (let i = 0; i < totalShards; i += i) {
+  for (let i = 0; i < totalShards; i += 1) {
     // Generate shred IDs to name the shreds
-    fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength, (i + 1) * shardLength));
+    shredsList.push(buffer.slice(i * shardLength, (i + 1) * shardLength));
+    // fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength,
+    // (i + 1) * shardLength));
   }
+
+  // return buffer
+  callback(shredsList);
 }
 
 // shredsBuffer: a Buffer containing the shreds to be recovered,
 // targets: a variable containing the indecies of the missing shreds
 // dataShreds: Math.ceil(dataBuffer.length / shardLength)
 // recoverdFile: the name of the file to be recovered
-function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, recoveredFile) {
+function recoverFile(shredsBuffer, targets, parity, dataShreds, callback) {
   const buffer = new Buffer(shredsBuffer);
-  const shardLength = shredLength;
   const dataShards = dataShreds;
   const parityShards = parity * dataShards;
   const bufferOffset = 0;
   const totalShards = dataShards + parityShards;
+  const shardLength = Math.ceil(buffer.length / totalShards); // shredLength;
   const bufferSize = shardLength * totalShards;
   const shardOffset = 0;
   const shardSize = shardLength - shardOffset;
@@ -137,9 +148,11 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
       if (error) throw error;
     }
   );
+
   const dataLength = dataShards * shardLength;
-  const restoredShreds = buffer.slice(bufferOffset, dataLength - 1);
-  fs.writeFileSync(recoveredFile, restoredShreds);
+  const restoredShreds = buffer.slice(bufferOffset, dataLength);
+
+  callback(restoredShreds);
 }
 
 const fileMapPath = 'filemap';
