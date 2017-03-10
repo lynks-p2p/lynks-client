@@ -15,7 +15,8 @@ client.on('response', function(packet){
         console.log("address : "+packet.attrs[stun.attribute.XOR_MAPPED_ADDRESS].address);
         console.log("port : "+packet.attrs[stun.attribute.XOR_MAPPED_ADDRESS].port);
     } else {
-          console.log("address 2: "+packet.attrs[stun.attribute.MAPPED_ADDRESS]);
+          console.log("address : "+packet.attrs[stun.attribute.MAPPED_ADDRESS].address);
+          console.log("port : "+packet.attrs[stun.attribute.MAPPED_ADDRESS].port);
     }
     setTimeout(function(){
        client.close();
