@@ -17,7 +17,10 @@ client.on('response', function(packet){
     } else {
           console.log("address 2: "+packet.attrs[stun.attribute.MAPPED_ADDRESS]);
     }
-
+    setTimeout(function(){
+       client.close();
+       console.log('done');
+}, 2000);
 
 });
 // Sending STUN Packet
