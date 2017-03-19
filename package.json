@@ -163,7 +163,7 @@
     "delivery": "^0.0.6",
     "electron-debug": "^1.1.0",
     "font-awesome": "^4.7.0",
-    "kad": "^1.6.4",
+    "kad": "^1.6.5",
     "kad-traverse": "0.0.4",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",

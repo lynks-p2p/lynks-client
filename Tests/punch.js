@@ -1,81 +1,62 @@
-var natUpnp = require('nat-upnp');
-var net = require ("net");
+var kad = require('kad');
+var traverse = require('kad-traverse');
 
-var client = natUpnp.createClient();
+// var seed = {
+//   address: '127.0.0.1',
+//   port: 1348
+// };
 
-client.portMapping({
-
-  public: 2345,
-
-  private: 2345,
-
-  ttl: 1000
-
-}, function(err) {
-
-  // Will be called once finished
-
-  console.log('## done');
-
-  console.log(err);
-
+// Create your contact
+var contact = kad.contacts.AddressPortContact({
+  address: '192.168.1.3',
+  port: 1337
 });
 
+// Decorate your transport
+var NatTransport = traverse.TransportDecorator(kad.transports.UDP);
 
-
-client.portUnmapping({
-
-  public: 12345
-
+// Create your transport with options
+var transport = new NatTransport(contact, {
+  traverse: {
+    upnp: false,
+    stun: { /* options */ },
+    turn: { /* options */ }
+  }
 });
 
-
-
-client.getMappings(function(err, results) {
-
-  console.log('-- get mappings');
-
-  console.log(results);
-
-  var io  = require('socket.io').listen(2345),
-      dl  = require('delivery');
-
-  var fs = require('fs');
-
-  io.sockets.on('connection', function(socket){
-
-        var delivery = dl.listen(socket);
-        delivery.on('receive.success',function(file){
-
-          fs.writeFile(file.name, file.buffer, function(err){
-            if(err){
-              console.log('File could not be saved: ' + err);
-            }else{
-              console.log('File ' + file.name + " saved");
-            };
-          });
-        });
-      });
-
-
+const node = kad({
+  transport: new kad.HttpTransport(),
+  storage: require('levelup')('/home/james/Downloads'),
+  contact: { hostname: '192.168.1.3', port: 8080 }
 });
 
+const seed = [
+  'ea48d3f07a5241291ed0b4cab6483fa8b8fcc127',
+  { hostname: '127.0.0.1', port: 8080 }
+];
 
+node.listen(1337);
+node.join(seed, function() {
+  console.log(`Connected to ${node.router.size} peers!`);
+});
 
-// client.getMappings({ local: true }, function(err, results) {
+// var dht = new kad.Node({
+//   transport: transport,
+//   storage: kad.storage.FS('/home/james/Downloads')
+// });
 //
-//   console.log('-- get lcoal mappings');
+// dht.connect(seed,  function(err){
+//   // dht.get(key, callback);
+//   // dht.put(key, value, callback);
 //
-//   console.log(results);
 //
 // });
 
+transport.before('receive', function(message, contact, next) {
+  // exit middleware stack if contact is blacklisted
+  console.log("receive from another Node");
+  console.log(message);
 
-
-// client.externalIp(function(err, ip) {
-//
-//   console.log('-- get ip');
-//
-//   console.log(ip);
-//
-// });
+  // otherwise pass on
+  next();
+});
