@@ -1,44 +1,49 @@
 var i=0,j=0;
 module.exports = {
-  listen_file : function  (socket, filenames, filepaths){
-    socket.on('connect', function(){
-      socket.emit('file_request', { filenames: filenames,  filepaths: filepaths });
-      socket.on('start_receiving', function (data) {
-        console.log ('now receiving!');
-        var dl  = require('delivery');
-        var fs = require('fs');
-        var delivery = dl.listen(socket);
-        delivery.on('receive.success',function(file){
-          fs.writeFile(file.name, file.buffer, function(err){
-            if(err){
-              console.log('File could not be saved: ' + err);
-             }else{
-              console.log('File ' + i++ +file.name + " saved");
-            }
-          });
-        });
+  get_shreds : function  (socket, shredIDs, shredpath, callback){
+    console.log ('now receiving!');
+    var shreds_received = 0;
+    const dl  = require('delivery');
+    const fs = require('fs');
+    const delivery = dl.listen(socket);
+    delivery.on('receive.success',function(shred){
+      fs.writeFile(shredpath + shred.name, shred.buffer, function(err){
+        if(err){
+          console.log('shred could not be saved: ' + err);
+         }else{
+          console.log('shred ' + i++ +shred.name + ' saved');
+        }
+        shreds_received++;
+        if (shreds_received == shredIDs.length ){
+          socket.disconnect();
+          callback();
+        }
       });
     });
+    socket.on('disconnect', function(){
+      console.log('socket closed');
+    });
   },
-  send_file : function  (socket, filenames, filepaths, callback) {
-    var dl  = require('delivery');
-    var fs  = require('fs');
-
-    socket.emit('start_receiving', { filenames: filenames }, {filepaths: filepaths});
-    var delivery = dl.listen( socket );
+  send_shreds : function  (socket, shredIDs, path, callback) {
+    const dl  = require('delivery');
+    const fs  = require('fs');
+    const delivery = dl.listen( socket );
     delivery.connect();
 
     delivery.on('delivery.connect',function(delivery){
-      for (var i=0;i<filenames.length;i++){
+      for (var i=0; i<shredIDs.length; i++) {
         delivery.send({
-          name: filenames[i],
-          path : filepaths[i]
+          name: shredIDs[i],
+          path: path + shredIDs[i]
         });
       }
-      delivery.on('send.success',function(file){
-        console.log('File '+j++ +' sent successfully!');
+      delivery.on('send.success',function(shred) {
+        console.log('shred '+j++ +' sent successfully!');
         callback();
-        });
       });
+    });
+    socket.on('disconnect', function(){
+      console.log('socket closed');
+    });
   }
 };
