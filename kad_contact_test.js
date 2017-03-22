@@ -1,23 +1,25 @@
 const kad = require('kad');
 
-const seed = {
-  address: '127.0.0.1',//'127.0.0.1',//10.40.44.118
-  port: 1338
-};
+//the server
+const seed = [
+  'ea48d3f07a5241291ed0b4cab6483fa8b8fcc127',
+  { hostname: '10.40.57.40', port: 5432 }
+];
 
-const dht = new kad.Node({
-  transport: kad.transports.TCP(kad.contacts.AddressPortContact({
-    address: '10.40.44.118 ',//'127.0.0.1', //10.40.44.118
-    port: 1337
-  })),
-  storage: kad.storage.FS('./kad/')
+
+//we are using two port on each machine
+const listeningPort=1337;
+const SendingPort=5001;
+
+
+const node = kad({
+  transport: new kad.HTTPSTransport(),
+  storage: require('levelup')('./DHT_Storage/'),
+  contact: { hostname: 'YourIP', port: SendingPort }
 });
 
-dht.connect(seed, (err) => {
-  if (err) console.log(err);
-  // dht.get(key, callback);
-  // dht.put(key, value, callback);
-  console.log('Found  a !!!!!!!!!!!!!!');
-  console.log(dht._router._buckets['159']._contacts[0]); //159 is the key in  buckets
-  console.log('CLIENT!!!!!!!!!!!!!!');
+
+node.listen(listeningPort);
+node.join(seed, function() {
+  console.log(`Connected to ${node.router.size} peers!`);
 });
