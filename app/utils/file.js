@@ -70,7 +70,7 @@ function decrypt(buffer, key, callback) {
 // inputFile is the path-name of the file to be shredded
 // Parity is a multiple of the number of shreds in the original file
 // The % of shreds we can lose is = (Parity/(Parity+1))*100
-function shredFile(inputBuffer, dataShreds, parity, callback) {
+function erasureCode(inputBuffer, dataShreds, parity, callback) {
   // inputFile is the path-name of the file to be shredded
   // Parity is a multiple of the number of shreds in the original file
   // The % of shreds we can lose is = (Parity/(Parity+1))*100
@@ -124,7 +124,7 @@ function shredFile(inputBuffer, dataShreds, parity, callback) {
 // targets: a variable containing the indecies of the missing shreds
 // dataShreds: Math.ceil(dataBuffer.length / shardLength)
 // recoverdFile: the name of the file to be recovered
-function recoverFile(shredsBuffer, targets, parity, dataShreds, callback) {
+function erasureDecode(shredsBuffer, targets, parity, dataShreds, callback) {
   const buffer = new Buffer(shredsBuffer);
   const dataShards = dataShreds;
   const parityShards = parity * dataShards;
@@ -154,6 +154,8 @@ function recoverFile(shredsBuffer, targets, parity, dataShreds, callback) {
 
   callback(restoredShreds);
 }
+
+
 
 const fileMapPath = 'filemap';
 
@@ -228,14 +230,81 @@ function removeFileMapEntry(fileID) {
 }
 
 
+const NShreds = 10;
+const parity = 2;
+// const key = '123key';
+// const input='Jon.mp4';
+const output='new_flash.jpg';
+// const deadbytes = 6;
+
+function shredFile(filename, key, callback) {
+  fileToBuffer(filename, (loadedBuffer) => {
+    compress(loadedBuffer, (compressedBuffer) => {
+      encrypt(compressedBuffer, key, (encryptedBuffer) => {
+        console.log(encryptedBuffer.length);
+        erasureCode(encryptedBuffer, NShreds, parity, (shreds) => {
+
+          const saveShreds = (index, limit) => {
+            bufferToFile(`./tmp/shred_${index}`, shreds[index], () => {
+              if (index < limit - 1) saveShreds(index + 1, limit);
+              else {
+                createFileMap();
+                
+                const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
+                console.log('deadbytes: ' + deadbytes);
+                callback();
+              }
+            });
+          };
+
+          const limit = shreds.length;
+
+          saveShreds(0, limit);
+        });
+      });
+    });
+  });
+};
+
+function reconstructFile (shredsPaths, key, deadbytes, callback) {
+  let buffer = new Buffer([]);
+
+  const readShreds = (index, limit, callback2) => {
+    fileToBuffer(shredsPaths[index], (data) => {
+      buffer = Buffer.concat([buffer, data]);
+      if (index < limit - 1) readShreds(index + 1, limit, callback2);
+      else {
+        callback2();
+      }
+    });
+  };
+
+  const limit = shredsPaths.length;
+
+  readShreds(0, limit, () => {
+    erasureDecode(buffer, 0, parity, NShreds, (loadedBuffer) => {
+      console.log(loadedBuffer.length);
+      const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
+      decrypt(loadedBuffer2, key, (decryptedBuffer) => {
+        decompress(decryptedBuffer, (decompressedBuffer) => {
+          bufferToFile(output, decompressedBuffer, () => {
+            console.log('Success!');
+            callback();
+          });
+        });
+      });
+    });
+  });
+};
+
 export {
   createID,
   fileToBuffer,
   bufferToFile,
   compress,
   decompress,
-  shredFile,
-  recoverFile,
+  erasureCode,
+  erasureDecode,
   encrypt,
   decrypt,
   getFileList,
@@ -243,4 +312,7 @@ export {
   getFileMap,
   syncFileMap,
   addFileMapEntry,
-  removeFileMapEntry };
+  removeFileMapEntry,
+  shredFile,
+  reconstructFile
+   };
