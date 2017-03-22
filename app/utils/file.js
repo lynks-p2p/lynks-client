@@ -13,90 +13,71 @@ function getFileList() {
   return 0;
 }
 
-function compress(filepath, callback) {
+function fileToBuffer(path, callback) {
+  fs.readFile(path, (err, data) => {
+    if (err) return console.log(err);
+
+    return callback(data);
+  });
+}
+
+function bufferToFile(path, buffer, callback) {
+  fs.writeFile(path, buffer, (err) => {
+    if (err) return console.log(err);
+
+    return callback();
+  });
+}
+
+function compress(buffer, callback) {
   // compress file with zlib
-  const gzip = zlib.createGzip();
-  const newfilepath = `${filepath}.Gzip`;
-  const decompressedfile = fs.createReadStream(filepath);
-  const compressedfile = fs.createWriteStream(newfilepath);
-  decompressedfile.pipe(gzip).pipe(compressedfile);
-  if (callback) {
-    decompressedfile.on('end', callback);
-  }
-  // return compressed file name
-  return newfilepath;
+  zlib.gzip(buffer, (err, data) => {
+    if (err) return console.log(err);
+
+    return callback(data);
+  });
 }
 
-function decompress(filepath, callback) {
+function decompress(buffer, callback) {
   // decompress file with zlib
-  const gunzip = zlib.createGunzip();
-  let newfilepath;
-  if (filepath.indexOf('_decrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_copy`;
-  } else {
-    newfilepath = `${filepath}_copy`;
-  }
-  const compressedfile = fs.createReadStream(filepath);
-  const decompressedfile = fs.createWriteStream(newfilepath);
-  compressedfile.pipe(gunzip).pipe(decompressedfile);
-  fs.unlinkSync(filepath);
-  if (callback) {
-    compressedfile.on('end', callback);
-  }
-  // return decompressed file name
-  return newfilepath;
+  zlib.gunzip(buffer, (err, data) => {
+    if (err) return console.log(err);
+
+    return callback(data);
+  });
 }
 
-function encrypt(filepath, key, callback) {
+function encrypt(buffer, key, callback) {
   const algorithm = 'aes-256-ctr';
   const password = key;
-  let newfilepath;
-  if (filepath.indexOf('.Gzip') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 5)}_encrypted`;
-  } else {
-    newfilepath = `${filepath}_encrypted`;
-  }
   const encryptVar = crypto.createCipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(encryptVar).pipe(compressedfileWrite);
-  fs.unlinkSync(filepath);
-  if (callback) {
-    compressedfileRead.on('end', callback);
-  }
-  // return encrypted file name
-  return newfilepath;
+
+  const out = Buffer.concat([encryptVar.update(buffer), encryptVar.final()]);
+
+  return callback(out);
 }
 
-function decrypt(filepath, key, callback) {
+function decrypt(buffer, key, callback) {
   const algorithm = 'aes-256-ctr';
   const password = key;
-  let newfilepath;
-  if (filepath.indexOf('_encrypted') > -1) {
-    newfilepath = `${filepath.substr(0, filepath.length - 10)}_decrypted`;
-  } else {
-    newfilepath = `${filepath}_decrypted`;
-  }
   const decryptVar = crypto.createDecipher(algorithm, password);
-  const compressedfileRead = fs.createReadStream(filepath);
-  const compressedfileWrite = fs.createWriteStream(newfilepath);
-  compressedfileRead.pipe(decryptVar).pipe(compressedfileWrite);
-  fs.unlinkSync(filepath);
-  if (callback) {
-    compressedfileRead.on('end', callback);
-  }
-  // return decrypted file name
-  return newfilepath;
+
+  const out = Buffer.concat([decryptVar.update(buffer), decryptVar.final()]);
+
+  return callback(out);
 }
 
 // inputFile is the path-name of the file to be shredded
 // Parity is a multiple of the number of shreds in the original file
 // The % of shreds we can lose is = (Parity/(Parity+1))*100
-function shredFile(parity, shredLength, inputFile) {
-  const bitmap = fs.readFileSync(inputFile);
-  const dataBuffer = new Buffer(bitmap);
-  const shardLength = shredLength;
-  const dataShards = Math.ceil(dataBuffer.length / shardLength);
+function erasureCode(inputBuffer, dataShreds, parity, callback) {
+  // inputFile is the path-name of the file to be shredded
+  // Parity is a multiple of the number of shreds in the original file
+  // The % of shreds we can lose is = (Parity/(Parity+1))*100
+
+  const dataBuffer = inputBuffer;
+  const dataShards = dataShreds;
+  const shardLength = Math.ceil(dataBuffer.length / dataShards); // shredLength;
   const parityShards = parity * dataShards;
   const totalShards = dataShards + parityShards;
   // Create the parity buffer
@@ -124,24 +105,32 @@ function shredFile(parity, shredLength, inputFile) {
       // Parity shards now contain parity data.
     }
   );
+
+  const shredsList = [];
+
   // writing data shards as files
-  for (let i = 0; i < totalShards; i += i) {
+  for (let i = 0; i < totalShards; i += 1) {
     // Generate shred IDs to name the shreds
-    fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength, (i + 1) * shardLength));
+    shredsList.push(buffer.slice(i * shardLength, (i + 1) * shardLength));
+    // fs.writeFileSync(`${i}_${Math.random()}`, buffer.slice(i * shardLength,
+    // (i + 1) * shardLength));
   }
+
+  // return buffer
+  callback(shredsList);
 }
 
 // shredsBuffer: a Buffer containing the shreds to be recovered,
 // targets: a variable containing the indecies of the missing shreds
 // dataShreds: Math.ceil(dataBuffer.length / shardLength)
 // recoverdFile: the name of the file to be recovered
-function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, recoveredFile) {
+function erasureDecode(shredsBuffer, targets, parity, dataShreds, callback) {
   const buffer = new Buffer(shredsBuffer);
-  const shardLength = shredLength;
   const dataShards = dataShreds;
   const parityShards = parity * dataShards;
   const bufferOffset = 0;
   const totalShards = dataShards + parityShards;
+  const shardLength = Math.ceil(buffer.length / totalShards); // shredLength;
   const bufferSize = shardLength * totalShards;
   const shardOffset = 0;
   const shardSize = shardLength - shardOffset;
@@ -159,10 +148,14 @@ function recoverFile(shredsBuffer, targets, parity, shredLength, dataShreds, rec
       if (error) throw error;
     }
   );
+
   const dataLength = dataShards * shardLength;
-  const restoredShreds = buffer.slice(bufferOffset, dataLength - 1);
-  fs.writeFileSync(recoveredFile, restoredShreds);
+  const restoredShreds = buffer.slice(bufferOffset, dataLength);
+
+  callback(restoredShreds);
 }
+
+
 
 const fileMapPath = 'filemap';
 
@@ -237,12 +230,81 @@ function removeFileMapEntry(fileID) {
 }
 
 
+const NShreds = 10;
+const parity = 2;
+// const key = '123key';
+// const input='Jon.mp4';
+const output='new_flash.jpg';
+// const deadbytes = 6;
+
+function shredFile(filename, key, callback) {
+  fileToBuffer(filename, (loadedBuffer) => {
+    compress(loadedBuffer, (compressedBuffer) => {
+      encrypt(compressedBuffer, key, (encryptedBuffer) => {
+        console.log(encryptedBuffer.length);
+        erasureCode(encryptedBuffer, NShreds, parity, (shreds) => {
+
+          const saveShreds = (index, limit) => {
+            bufferToFile(`./tmp/shred_${index}`, shreds[index], () => {
+              if (index < limit - 1) saveShreds(index + 1, limit);
+              else {
+                createFileMap();
+                
+                const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
+                console.log('deadbytes: ' + deadbytes);
+                callback();
+              }
+            });
+          };
+
+          const limit = shreds.length;
+
+          saveShreds(0, limit);
+        });
+      });
+    });
+  });
+};
+
+function reconstructFile (shredsPaths, key, deadbytes, callback) {
+  let buffer = new Buffer([]);
+
+  const readShreds = (index, limit, callback2) => {
+    fileToBuffer(shredsPaths[index], (data) => {
+      buffer = Buffer.concat([buffer, data]);
+      if (index < limit - 1) readShreds(index + 1, limit, callback2);
+      else {
+        callback2();
+      }
+    });
+  };
+
+  const limit = shredsPaths.length;
+
+  readShreds(0, limit, () => {
+    erasureDecode(buffer, 0, parity, NShreds, (loadedBuffer) => {
+      console.log(loadedBuffer.length);
+      const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
+      decrypt(loadedBuffer2, key, (decryptedBuffer) => {
+        decompress(decryptedBuffer, (decompressedBuffer) => {
+          bufferToFile(output, decompressedBuffer, () => {
+            console.log('Success!');
+            callback();
+          });
+        });
+      });
+    });
+  });
+};
+
 export {
   createID,
+  fileToBuffer,
+  bufferToFile,
   compress,
   decompress,
-  shredFile,
-  recoverFile,
+  erasureCode,
+  erasureDecode,
   encrypt,
   decrypt,
   getFileList,
@@ -250,4 +312,7 @@ export {
   getFileMap,
   syncFileMap,
   addFileMapEntry,
-  removeFileMapEntry };
+  removeFileMapEntry,
+  shredFile,
+  reconstructFile
+   };
