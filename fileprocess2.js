@@ -9,17 +9,21 @@ const output='jon_new.mp4';
 const deadbytes = 6;
 
 const processFile = (filename, callback) => {
+  var shredIDs = [];
   fileToBuffer(filename, (loadedBuffer) => {
     compress(loadedBuffer, (compressedBuffer) => {
       encrypt(compressedBuffer, key, (encryptedBuffer) => {
         console.log(encryptedBuffer.length);
         shredFile(encryptedBuffer, NShreds, parity, (shreds) => {
           const saveShreds = (index, limit) => {
-            bufferToFile(`shred_${index}`, shreds[index], () => {
+            var path = './pre_send/';
+            shredIDs.push('shred_'+index);
+            console.log(path+shredIDs[index]);
+            bufferToFile(path + shredIDs[index], shreds[index], () => {
               if (index < limit - 1) saveShreds(index + 1, limit);
               else {
                 console.log('SUCCESS.');
-                callback();
+                callback(shredIDs, path);
               }
             });
           };
@@ -33,11 +37,13 @@ const processFile = (filename, callback) => {
   });
 };
 
+function createShredList (NShreds, parity){
 const shredsList = [];
-for (let i = 0; i < NShreds * (parity + 1); i += 1) {
-  shredsList.push(`shred_${i}`);
+for (let i = 0; i < NShreds * (parity + 1); i++) {
+  shredsList.push('/pre_store/shred_'+i);
+  }
+  return shredsList;
 }
-
 const gatherFile = (shredsPaths, callback) => {
   let buffer = new Buffer([]);
 
@@ -88,9 +94,9 @@ const gatherFile = (shredsPaths, callback) => {
 //   // });
 // });
 
-gatherFile(shredsList, () => {
+/*gatherFile(shredsList, () => {
   console.log('BAZINGA.');
-});
+});*/
 
 //
 // compress('flash.jpg', () => {
@@ -100,3 +106,7 @@ gatherFile(shredsList, () => {
 //     });
 //   });
 // });
+export {
+  processFile,
+  gatherFile,
+}

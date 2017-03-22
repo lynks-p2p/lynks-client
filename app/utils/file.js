@@ -112,8 +112,8 @@ function shredFile(inputBuffer, dataShreds, parity, callback) {
   for (let i = 0; i < totalShards; i += 1) {
     // Generate shred IDs to name the shreds
     shredsList.push(buffer.slice(i * shardLength, (i + 1) * shardLength));
-     fs.writeFileSync('../pre_send'+`${i}_${Math.random()}`, buffer.slice(i * shardLength,
-     (i + 1) * shardLength));
+     //fs.writeFileSync('../pre_send'+`${i}_${Math.random()}`, buffer.slice(i * shardLength,
+    // (i + 1) * shardLength));
   }
 
   // return buffer
