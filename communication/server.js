@@ -1,19 +1,25 @@
-const net = require('net');
-const get_shreds = require ('./FileTransfer.js').get_shreds;
+const net = require ("net");
 const send_shreds = require ('./FileTransfer.js').send_shreds;
+const get_shreds = require ('./FileTransfer.js').get_shreds;
+
 module.exports = {
-  send_shred_request : function(public_ip, public_port, shredIDs, callback) {
-    const socket  = require('socket.io-client')('http://'+ public_ip  +':'+ public_port);
-    socket.emit('retrieve_shreds', { shredIDs: shredIDs });
-    get_shreds(socket, shredIDs, '../Downloads/', ()=>{
-      callback();
-    });
-  },
-  send_store_request : function(public_ip, public_port, shredIDs, shredpath, callback) {
-    const socket  = require('socket.io-client')('http://'+ public_ip  +':'+ public_port);
-    socket.emit('store_shreds', { shredIDs: shredIDs });
-    send_shreds (socket, shredIDs, shredpath, ()=>{
-    callback();
-    });
-  }
+    handle_requests : function(private_port, callback) {
+      const io  = require('socket.io').listen(private_port);
+      console.log('listening: '+private_port);
+      io.sockets.on('connection', function(socket) {
+        console.log('connected');
+        socket.on('retrieve_shreds', function (data) {
+          console.log ('received a shred request!');
+          send_shreds (socket, data['shredIDs'], '../Storage/', ()=>{
+          callback();
+          });
+        });
+        socket.on('store_shreds', function (data) {
+          console.log ('received a store request!');
+          get_shreds(socket, data['shredIDs'], '../Storage/', ()=>{
+            callback();
+          });
+        });
+      });
+    }
 };
