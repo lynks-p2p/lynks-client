@@ -5,7 +5,7 @@ import ObjectID from 'bson-objectid';
 
 import fs from 'fs';
 
-function createID() {
+function generateFileID() {
   return 0;
 }
 
@@ -238,7 +238,7 @@ function removeFileMapEntry(fileID) {
 
 
 export {
-  createID,
+  generateFileID,
   compress,
   decompress,
   shredFile,

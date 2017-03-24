@@ -27,16 +27,16 @@ function intializeDHT(myIP, myPort, myID, mySeed, callback){
     identity: Buffer.from(myID)
   });
 
-  node.use((request, response, next) => {
-    console.log('\n---------------------------------------------------------')
-    console.log('## REQ')
-    console.log(request)
-    console.log('## RES')
-    console.log(response)
-    console.log('---------------------------------------------------------\n')
-
-    next();
-  });
+  // node.use((request, response, next) => {
+  //   console.log('\n---------------------------------------------------------')
+  //   console.log('## REQ')
+  //   console.log(request)
+  //   console.log('## RES')
+  //   console.log(response)
+  //   console.log('---------------------------------------------------------\n')
+  //
+  //   next();
+  // });
 
 
   node.listen(myPort, () => {

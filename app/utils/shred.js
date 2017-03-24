@@ -1,9 +1,26 @@
+const kad = require('kad');
+import {node}  from './peer';
 
-function createID() {
-  return 0;
+function generateShredID(cb) {
+
+   const checkUniqueness = (key) => {
+     retrieveHosts(key, (value) => {
+       if (value.length != undefined) {
+         // good key
+         cb(key);
+       }
+       else {
+         // key already exists
+         console.log('key already in use')
+         checkUniqueness(kad.utils.getRandomKeyString())
+       }
+     })
+   }
+
+   checkUniqueness(kad.utils.getRandomKeyString());
 }
 
-function saveHost(node,shredID,hostID,callback) {
+function saveHost(shredID,hostID,callback) {
 
   //store (shred, host) in DHT`
     //node:KadmeilaNode
@@ -14,7 +31,7 @@ function saveHost(node,shredID,hostID,callback) {
   //the the shredId is the key. the key must be a 160 bits or 20 Bytes
   //the data is the hostID
 
-  
+
   node.iterativeStore(shredID, hostID, (err, numOfStored) => {
     if (err) return console.log(err);
     callback(err,numOfStored);
@@ -23,16 +40,16 @@ function saveHost(node,shredID,hostID,callback) {
 
 }
 
-function retrieveHosts(node,key,callback) {
+function retrieveHosts(key, callback) {
   // load (shred, host) from DHT
     //node:KadmeilaNode
     //key: buffer
-
   node.iterativeFindValue(key, (err, value, contacts) => {
     if (err) return console.log(err);
     callback (value, contacts)
-    }) ;
+  }) ;
 
-  }
 
-export { createID, saveHost, retrieveHosts };
+}
+
+export { generateShredID, saveHost, retrieveHosts };
