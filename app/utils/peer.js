@@ -2,14 +2,16 @@
 import socketio from 'socket.io';
 import socketclient from 'socket.io-client';
 import dl from 'delivery';
+import ip from 'ip'
 import fs from 'fs';
 const levelup = require('levelup');
 const kad = require('kad');
 
 
+
 let node;
 
-function intializeDHT(myIP, myPort, myID, mySeed, callback){
+function intializeDHT(myPort, myID, mySeed, callback){
   //MyIp , myID : strings
   //myPort : int, preferably 8080
   //mySeed is an object of that shape:-
@@ -23,7 +25,7 @@ function intializeDHT(myIP, myPort, myID, mySeed, callback){
   node = kad({
     transport: new kad.UDPTransport(),
     storage: levelup('./DHT_Storage/'),
-    contact: { hostname: myIP, port: myPort },
+    contact: { hostname: ip.address() , port: myPort },
     identity: Buffer.from(myID)
   });
 
