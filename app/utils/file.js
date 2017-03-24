@@ -250,4 +250,5 @@ export {
   getFileMap,
   syncFileMap,
   addFileMapEntry,
-  removeFileMapEntry };
+  removeFileMapEntry,
+  readFileMap };

@@ -1,24 +1,23 @@
-// const kad = require('kad');
-
-// import { fileToBuffer,
-//    bufferToFile, compress, decompress, encrypt, decrypt, shredFile, recoverFile } from './app/utils/file';
 
 function createID() {
   return 0;
 }
 
-function saveHost(node,key,shredID,hostID,callback) {
+function saveHost(node,shredID,hostID,callback) {
 
   //store (shred, host) in DHT`
     //node:KadmeilaNode
-    //key: buffer
     //shredID,hostID : int
 
-  const data= shredID+','+hostID
+  // const data= shredID+','+hostID
 
-  node.iterativeStore(key, data, (err, numOfStored) => {
+  //the the shredId is the key. the key must be a 160 bits or 20 Bytes
+  //the data is the hostID
+
+  
+  node.iterativeStore(shredID, hostID, (err, numOfStored) => {
     if (err) return console.log(err);
-    callback(err,numOfStored)
+    callback(err,numOfStored);
 
     });
 
