@@ -5,7 +5,7 @@ import ObjectID from 'bson-objectid';
 
 import fs from 'fs';
 
-function createID() {
+function generateFileID() {
   return 0;
 }
 
@@ -249,7 +249,7 @@ function shredFile(filename, key, callback) {
               if (index < limit - 1) saveShreds(index + 1, limit);
               else {
                 createFileMap();
-                
+
                 const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
                 console.log('deadbytes: ' + deadbytes);
                 callback();
@@ -298,7 +298,7 @@ function reconstructFile (shredsPaths, key, deadbytes, callback) {
 };
 
 export {
-  createID,
+  generateFileID,
   fileToBuffer,
   bufferToFile,
   compress,
@@ -313,6 +313,7 @@ export {
   syncFileMap,
   addFileMapEntry,
   removeFileMapEntry,
+  readFileMap,
   shredFile,
   reconstructFile
    };
