@@ -10,13 +10,13 @@ module.exports = {
         console.log('connected');
         socket.on('retrieve_shreds', function (data) {
           console.log ('received a shred request!');
-          send_shreds (socket, data['shredIDs'], '../Storage/', ()=>{
+          send_shreds (socket, data['shredIDs'], './Storage/', ()=>{
           callback();
           });
         });
         socket.on('store_shreds', function (data) {
           console.log ('received a store request!');
-          get_shreds(socket, data['shredIDs'], '../Storage/', ()=>{
+          get_shreds(socket, data['shredIDs'], './Storage/', ()=>{
             callback();
           });
         });

@@ -39,11 +39,11 @@ module.exports = {
       }
       delivery.on('send.success',function(shred) {
         console.log('shred '+j++ +' sent successfully!');
-        callback();
       });
     });
     socket.on('disconnect', function(){
       console.log('socket closed');
+      callback();
     });
   }
 };

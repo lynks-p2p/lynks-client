@@ -1,7 +1,8 @@
 const send_shred_request = require ('../../communication/client.js').send_shred_request;
 const send_store_request = require ('../../communication/client.js').send_store_request;
-const processFile = require ('../../fileprocess2.js').processFile;
-
+const shredFile = require ('./file.js').shredFile;
+const readFileMap = require ('./file.js').readFileMap;
+const reconstructFile = require ('./file.js').reconstructFile;
 function getPeers() {
   // get list of n best peers
 
@@ -9,32 +10,31 @@ function getPeers() {
   return 0;
 }
 
-function shred_and_send(public_ip, public_port, filename, filepath) {
-  processFile(filepath + filename,(shredIDs, path)=>{
-    send_store_request(public_ip, public_port, shredIDs, path, ()=>{});
-  });
-}
-
-function receiveShred() {
-  // open channel/socket to receive a shred
-
-  // 5001 could be any random port else given that kadmelia gives the sender that random port
-  const listener = socketio.listen(5001);
-
-  listener.sockets.on('connection', (socket) => {
-    const delivery = dl.listen(socket);
-    delivery.on('receive.success', (file) => {
-      fs.writeFile(file.name, file.buffer, (err) => {
-        if (err) {
-          console.log('File could not be saved: ', err);
-        } else {
-          console.log('File ', file.name, ' saved');
-        }
-      });
+function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
+  shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
+    console.log ('done shredding');
+    send_store_request(public_ip, public_port, shredIDs, (path) => {
+      var fs = require ('fs');
+      for (var index in shredIDs) {
+        fs.unlink(path + shredIDs[index], () => {});
+      }
     });
   });
-
-  return 0;
 }
 
-export { getPeers, shred_and_send, receiveShred };
+function receive_and_gather(public_ip, public_port, fileID, callback) {
+  readFileMap((fileMap) => {
+    const file = fileMap[fileID];
+    if (file) {
+      const shredIDs = file['shreds'];
+      send_shred_request(public_ip, public_port, shredIDs, (shredspath) => {
+        reconstructFile(fileID, shredspath, () => {
+          callback();
+        });
+      });
+    }
+    else callback('error');
+  });
+}
+
+export { getPeers, shred_and_send, receive_and_gather };
