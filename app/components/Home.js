@@ -24,7 +24,7 @@ export default class Home extends Component {
           <Card>
              <CardHeader
                title="User 106"
-               subtitle="Space Available XX"
+               subtitle="Storage 3.2Gb"
              />
           </Card>
           <MenuItem
@@ -40,8 +40,8 @@ export default class Home extends Component {
           onTouchTap={()=>{this.setState({tab: 2});}}
           />
           <MenuItem
-          primaryText="Lynks Drive"
-          leftIcon={<Drive />}
+          primaryText="Lynks Share"
+          leftIcon={<Share />}
           value={3}
           onTouchTap={()=>{this.setState({tab: 3});}}
           />
