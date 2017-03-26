@@ -16,16 +16,13 @@ function getFileList() {
 function fileToBuffer(path, callback) {
   fs.readFile(path, (err, data) => {
     if (err) return console.log(err);
-
     return callback(data);
   });
 }
 
 function bufferToFile(path, buffer, callback) {
-  console.log('here');
   fs.writeFile(path, buffer, (err) => {
     if (err) return console.log(err);
-
     return callback();
   });
 }
@@ -34,7 +31,6 @@ function compress(buffer, callback) {
   // compress file with zlib
   zlib.gzip(buffer, (err, data) => {
     if (err) return console.log(err);
-
     return callback(data);
   });
 }
@@ -114,9 +110,6 @@ function erasureCode(inputBuffer, dataShreds, parity, callback) {
     // Generate shred IDs to name the shreds
     shredsList.push(buffer.slice(i * shardLength, (i + 1) * shardLength));
   }
-
-  // return buffer
-  //console.log ('shreds 1: '+shredsList);
   callback(shredsList, shardLength);
 }
 
@@ -174,8 +167,8 @@ function readFileMap(callback) {
 function createFileMap(callback) {
   // init file map
   const fileMap = {};
-  storeFileMap(fileMap, ()=>{
-  callback();
+  storeFileMap(fileMap, () => {
+    callback();
   });
 }
 
@@ -220,7 +213,6 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
     compress(loadedBuffer, (compressedBuffer) => {
       encrypt(compressedBuffer, key, (encryptedBuffer) => {
-        console.log(encryptedBuffer.length);
         erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
           var shredIDs = [];
           const saveShreds = (index, limit) => {
@@ -229,9 +221,9 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                 saveShreds(index + 1, limit);
               }
               else {
-                console.log ('limit: '+limit);
-                for (var i=0 ; i < limit; i++)
-                shredIDs.push('shred_'+i);
+                for (var i=0 ; i < limit; i++) {
+                  shredIDs.push('shred_'+i);
+                }
                 readFileMap((fileMap) => {
                   const fileMapSize = Object.keys(fileMap).length;
                   const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
@@ -246,17 +238,14 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                     deadbytes: deadbytes
                   }
                   const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
-                  console.log ('length: ' + lastFileID);
-                  addFileMapEntry((lastFileID == '' ) ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
-                  callback(shredIDs);
+                  addFileMapEntry(lastFileID == '' ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
+                    callback(shredIDs);
                   });
                 });
               }
             });
           };
-
           const limit = shreds.length;
-
           saveShreds(0, limit);
         });
       });
@@ -282,25 +271,22 @@ function reconstructFile(fileID, shredsPath, callback) {
       }
     };
     readShreds(() => {
-      console.log ('finishhh');
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
         if (!fileMap[fileID]) {
           console.log('error!!!');
           callback('error');
         }
-
         erasureDecode(buffer, 0, parity, NShreds, (loadedBuffer) => {
-          console.log(loadedBuffer.length);
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
               bufferToFile('./Downloads/' + filename, decompressedBuffer, () => {
                 console.log('Success!');
-                var fs = require ('fs');
-                for (var index in shredIDs) {
-                  console.log (shredsPath + shredIDs[index]);
-                  fs.unlink(shredsPath + shredIDs[index], ()=>{});
+                for (const index in shredIDs) {
+                  if (shredIDs[index]) {
+                    fs.unlink(shredsPath + shredIDs[index], () => {});
+                  }
                 }
                 callback();
               });

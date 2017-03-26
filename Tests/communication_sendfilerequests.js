@@ -10,8 +10,9 @@ const key = 'adsadsdsakdshksadksdasddjsajdjsakjdshakdjsahdashdksahjd';
 const NShreds = 10;
 const parity = 2;
 //createFileMap(() => {
+
 shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity);
-// receive_and_gather (public_ip, public_port, 2, (error) => {
+//receive_and_gather (public_ip, public_port, 9, (error) => {
 //   if (!error)
 //   console.log ('nice');
 //   else console.log ('file no longer exists');

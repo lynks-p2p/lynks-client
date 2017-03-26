@@ -9,7 +9,7 @@ const public_port = 2345;   //testing locally for now
 publicIp.v4().then(public_ip => {
   console.log("public ip: ", public_ip);
   console.log("private ip: ", private_ip.address());
-  map_port(private_port, public_port , (client) => {
-    handle_requests(private_port, ()=>{});
+  map_port(private_port, public_port , () => {
+    handle_requests(private_port, () => {});
   });
 });

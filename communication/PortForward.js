@@ -12,13 +12,7 @@ module.exports = {
       console.log('## done');
       console.log(err);
     });
-client.getMappings(function(err, results) {
-
-  console.log('-- get mappings');
-
-console.log(results);
-});
-    return callback(client);
+    callback();
   },
   unmap_port : function  (client, public_port, callback) {
     client.portUnmapping({
