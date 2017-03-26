@@ -2,6 +2,7 @@
 // @flow
 import React, { Component } from 'react';
 import LynksVault from './LynksVault';
+import LynksDrive from './LynksDrive';
 import Drawer from 'material-ui/Drawer';
 import MenuItem from 'material-ui/MenuItem';
 import {Card, CardActions, CardHeader, CardMedia, CardTitle, CardText} from 'material-ui/Card';
@@ -28,7 +29,7 @@ export default class Home extends Component {
           </Card>
           <MenuItem
           primaryText="Lynks Vault"
-          leftIcon={<Upload />}
+          leftIcon={<Upload />}LynksVault
           value={1}
           onTouchTap={()=>{this.setState({tab: 1});}}
           />
@@ -46,7 +47,7 @@ export default class Home extends Component {
           />
         </Drawer>
         <div>
-          {this.state.tab == 1 ? <LynksVault /> : null}
+          {this.state.tab == 1 ? <LynksVault /> : <LynksDrive />}
         </div>
       </div>
 
