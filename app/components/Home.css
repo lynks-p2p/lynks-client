@@ -7,9 +7,9 @@ div.tab {
 }
 
 div.app {
-    float: bottom;
+    float: right;
     border: 1px solid #ccc;
-    width: 100%;
+    width: 70%;
     height: 650px;
 }
 

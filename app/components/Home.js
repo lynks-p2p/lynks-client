@@ -1,11 +1,13 @@
 /* eslint-disable */
 // @flow
 import React, { Component } from 'react';
-import { Link } from 'react-router';
-import { Button, Nav, NavItem } from 'react-bootstrap';
-import styles from './Home.css';
 import LynksVault from './LynksVault';
-
+import Drawer from 'material-ui/Drawer';
+import MenuItem from 'material-ui/MenuItem';
+import {Card, CardActions, CardHeader, CardMedia, CardTitle, CardText} from 'material-ui/Card';
+import Upload from 'material-ui/svg-icons/file/file-upload';
+import Drive from 'material-ui/svg-icons/editor/insert-drive-file';
+import Share from 'material-ui/svg-icons/social/share';
 
 export default class Home extends Component {
   constructor() {
@@ -14,40 +16,40 @@ export default class Home extends Component {
       tab: 1
     };
   }
-  handleSelect (tabNum) {
-    this.setState({tab: tabNum});
-  }
   render() {
     return (
       <div>
+        <Drawer open={true}>
+          <Card>
+             <CardHeader
+               title="User 106"
+               subtitle="Space Available XX"
+             />
+          </Card>
+          <MenuItem
+          primaryText="Lynks Vault"
+          leftIcon={<Upload />}
+          value={1}
+          onTouchTap={()=>{this.setState({tab: 1});}}
+          />
+          <MenuItem
+          primaryText="Lynks Drive"
+          leftIcon={<Drive />}
+          value={2}
+          onTouchTap={()=>{this.setState({tab: 2});}}
+          />
+          <MenuItem
+          primaryText="Lynks Drive"
+          leftIcon={<Drive />}
+          value={3}
+          onTouchTap={()=>{this.setState({tab: 3});}}
+          />
+        </Drawer>
         <div>
-          <Nav bsStyle="pills" justified onSelect={this.handleSelect.bind(this)}>
-            <NavItem eventKey={1} >Lynks Vault</NavItem>
-            <NavItem eventKey={2} >Lynks Drive</NavItem>
-            <NavItem eventKey={3} >Lynks Share</NavItem>
-          </Nav>
-        </div>
-        <div className={styles.app}>
           {this.state.tab == 1 ? <LynksVault /> : null}
         </div>
       </div>
 
-      // <div>
-      //   <div className={styles.tab}>
-      //     <Button bsStyle="success" onClick={() => { this.setState({ tab: 1 }); }}>
-      //       Lynks Vault
-      //     </Button>
-      //     <button className={styles.tablinks} onClick={() => { this.setState({ tab: 2 }); }}>
-      //       Lynks Drive
-      //     </button>
-      //     <button className={styles.tablinks} onClick={() => { this.setState({ tab: 3 }); }}>
-      //       Lynks Share
-      //     </button>
-      //   </div>
-      //   <div className={styles.app}>
-      //     {this.state.tab === 1 ? <LynksVault /> : null }
-      //   </div>
-      // </div>
     );
   }
 }

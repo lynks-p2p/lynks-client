@@ -169,6 +169,7 @@
     "rc-progress": "^2.1.0",
     "react": "^15.4.2",
     "react-bootstrap": "^0.30.7",
+    "react-cellblock": "^2.0.0",
     "react-dom": "^15.4.2",
     "react-file-reader-input": "^1.1.0",
     "react-redux": "^5.0.2",
