@@ -5,7 +5,7 @@ import ObjectID from 'bson-objectid';
 
 import fs from 'fs';
 
-function createID() {
+function generateFileID() {
   return 0;
 }
 
@@ -242,6 +242,7 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                     callback(shredIDs);
                   });
                 });
+
               }
             });
           };
@@ -299,7 +300,7 @@ function reconstructFile(fileID, shredsPath, callback) {
 }
 
 export {
-  createID,
+  generateFileID,
   fileToBuffer,
   bufferToFile,
   compress,
