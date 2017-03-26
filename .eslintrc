@@ -23,8 +23,7 @@
     "react/jsx-no-bind": "off",
     "react/jsx-filename-extension": ["error", { "extensions": [".js", ".jsx"] }],
     "react/prefer-stateless-function": "off",
-    "flowtype-errors/show-errors": 2,
-    "no-underscore-dangle": "off"
+    "flowtype-errors/show-errors": 2
   },
   "plugins": [
     "flowtype",
