@@ -257,20 +257,22 @@ function reconstructFile(fileID, shredsPath, callback) {
   let buffer = new Buffer([]);
   readFileMap((fileMap) => {
     const file = fileMap[fileID];
-    const shredIDs = file['shreds'], key = file['key'], deadbytes = file['deadbytes'], NShreds = file['NShreds'], parity = file['parity'];
-    const readShreds = (callback2) => {
-      var counter = 0;
-      for (var index in shredIDs) {
-        fileToBuffer(shredsPath + shredIDs[index], (data) => {
-          counter++;
-          buffer = Buffer.concat([buffer, data]);
-          if (counter == shredIDs.length) {
-            callback2();
-          }
-        });
+
+    const { shreds: shredIDs, key, deadbytes, NShreds, parity } = file;
+
+    const readShreds = (index, limit, callback2) => {
+    fileToBuffer(shredsPath + shredIDs[index], (data) => {
+      buffer = Buffer.concat([buffer, data]);
+      if (index < limit - 1) readShreds(index + 1, limit, callback2);
+      else {
+        callback2();
       }
-    };
-    readShreds(() => {
+    });
+  };
+
+  const limit = shredIDs.length;
+
+  readShreds(0, limit, () => {
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
         if (!fileMap[fileID]) {
@@ -317,4 +319,4 @@ export {
   readFileMap,
   shredFile,
   reconstructFile
-   };
+};
