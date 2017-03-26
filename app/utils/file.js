@@ -253,33 +253,50 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
   });
 }
 
-function reconstructFile(fileID, shredsPath, callback) {
+function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   let buffer = new Buffer([]);
+
   readFileMap((fileMap) => {
     const file = fileMap[fileID];
-
-    const { shreds: shredIDs, key, deadbytes, NShreds, parity } = file;
+    const { key, deadbytes, NShreds, parity, shardLength } = file;
 
     const readShreds = (index, limit, callback2) => {
-    fileToBuffer(shredsPath + shredIDs[index], (data) => {
-      buffer = Buffer.concat([buffer, data]);
-      if (index < limit - 1) readShreds(index + 1, limit, callback2);
-      else {
-        callback2();
+      const shredPresent = ~targets & (1 << index);
+
+      console.log('index ' + index + ' -- ' + shredPresent);
+
+      if (shredPresent) {
+        // console.log('shred: ' + index);
+        fileToBuffer(shredsPath + shredIDs[index], (data) => {
+          buffer = Buffer.concat([buffer, data]);
+          if (index < limit - 1) readShreds(index + 1, limit, callback2);
+          else {
+            callback2();
+          }
+        });
+      } else {
+        const emptyBuffer = Buffer.alloc(shardLength, 'b');
+        buffer = Buffer.concat([buffer, emptyBuffer]);
+        if (index < limit - 1) readShreds(index + 1, limit, callback2);
+        else {
+          callback2();
+        }
       }
-    });
-  };
+    };
 
-  const limit = shredIDs.length;
+    const limit = shredIDs.length;
 
-  readShreds(0, limit, () => {
+    readShreds(0, limit, () => {
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
         if (!fileMap[fileID]) {
           console.log('error!!!');
           callback('error');
         }
-        erasureDecode(buffer, 0, parity, NShreds, (loadedBuffer) => {
+        erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
+          /*console.log(loadedBuffer.length);
+          console.log(loadedBuffer.length);*/
+
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
