@@ -262,8 +262,10 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
 
     const readShreds = (index, limit, callback2) => {
       const shredPresent = ~targets & (1 << index);
+      //
+      // console.log('index ' + index + ' -- ' + shredPresent);
 
-      console.log('index ' + index + ' -- ' + shredPresent);
+
 
       if (shredPresent) {
         // console.log('shred: ' + index);
@@ -294,8 +296,9 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
           callback('error');
         }
         erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
-          /*console.log(loadedBuffer.length);
-          console.log(loadedBuffer.length);*/
+          // BUG THIS IS REQUIRED FOR IT TO WORK??
+          console.log(loadedBuffer.length);
+          // console.log(loadedBuffer.length);
 
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
