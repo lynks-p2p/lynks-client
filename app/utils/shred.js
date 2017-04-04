@@ -1,5 +1,9 @@
-const kad = require('kad');
-import {node}  from './peer';
+import kad from 'kad';
+import dl from 'delivery';
+import fs from 'fs';
+import socketclient from 'socket.io-client';
+
+import { node } from './peer';
 
 function generateShredID(cb) {
 
@@ -52,4 +56,63 @@ function retrieveHosts(key, callback) {
 
 }
 
-export { generateShredID, saveHost, retrieveHosts };
+function sendShredHandler(socket, shredID, shredsPath, callback) {
+  const delivery = dl.listen(socket);
+  delivery.connect();
+
+  delivery.on('delivery.connect', (delivery) => {
+
+    // for (var i=0; i < shredIDs.length; i++) {
+    delivery.send({
+      name: shredID,
+      path: shredsPath + shredID
+    });
+    // }
+    delivery.on('send.success', () => {
+      console.log('A shred was sent successfully!');
+      callback();
+    });
+  });
+}
+
+function getShredHandler(socket, shredID, shredsPath, callback) {
+  console.log('HUUUU');
+
+  const delivery = dl.listen(socket);
+
+  delivery.on('receive.success', (shred) => {
+    fs.writeFile(shredsPath + shred.name, shred.buffer, (err) => {
+      socket.disconnect();
+      if (err) {
+        console.log('shred could not be saved: ' + err);
+        callback(err);
+      } else {
+        console.log('shred ' + shred.name + ' saved');
+        callback();
+      }
+    });
+  });
+}
+
+function storeShredRequest(ip, port, shredID, shredsPath, callback) {
+  const socket = socketclient(`http://${ip}:${port}`);
+
+  socket.emit('store_shred', { shredID });
+  sendShredHandler(socket, shredID, shredsPath, (err) => {
+    if (err) return console.log(err);
+    callback();
+  });
+}
+
+function getShredRequest(ip, port, shredID, shredsPath, callback) {
+  const socket = socketclient(`http://${ip}:${port}`);
+
+  socket.emit('retrieve_shred', { shredID });
+  getShredHandler(socket, shredID, shredsPath, (err) => {
+    if (err) return console.log(err);
+    callback();
+  });
+}
+
+
+export { generateShredID, saveHost, retrieveHosts, sendShredHandler, getShredHandler, storeShredRequest, getShredRequest };
