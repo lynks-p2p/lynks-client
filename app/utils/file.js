@@ -221,7 +221,6 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                 saveShreds(index + 1, limit);
               }
               else {
-<<<<<<< HEAD
                 for (var i=0 ; i < limit; i++) {
                   shredIDs.push('shred_'+i);
                 }
@@ -243,13 +242,6 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                     callback(shredIDs);
                   });
                 });
-=======
-                createFileMap();
-
-                const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
-                console.log('deadbytes: ' + deadbytes);
-                callback();
->>>>>>> a1e28f10dc0fe7869f5424e610552ec0d20b7e45
               }
             });
           };
