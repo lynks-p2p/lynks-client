@@ -12,6 +12,8 @@ import dl from 'delivery';
 import fs from 'fs';
 import levelup from 'levelup';
 import kad from 'kad';
+import ip from 'ip'
+
 
 import { sendShredHandler, getShredHandler } from './shred';
 
@@ -32,7 +34,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   node = kad({
     transport: new kad.UDPTransport(),
     storage: levelup('./DHT_Storage/'),
-    contact: { hostname: ip, port: port },
+    contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });
 
@@ -91,8 +93,8 @@ function initFileDelivery(port, callback) {
   callback();
 }
 
-function initHost(ip, port, networkID, seed, callback) {
-  initDHT(ip, port, networkID, seed, () => {
+function initHost( port, networkID, seed, callback) {
+  initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
       callback();
     });

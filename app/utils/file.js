@@ -2,8 +2,12 @@ import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
 import ObjectID from 'bson-objectid';
-
+import path from 'path';
+import async from 'async';
 import fs from 'fs';
+
+import { storeShredRequest, getShredRequest, generateShredID, saveHost } from './shred';
+
 
 function generateFileID() {
   return 0;
@@ -215,35 +219,38 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
       encrypt(compressedBuffer, key, (encryptedBuffer) => {
         erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
           var shredIDs = [];
+
           const saveShreds = (index, limit) => {
-            bufferToFile(`${pre_send_path}/shred_${index}`, shreds[index], () => {
-              if (index < limit - 1) {
-                saveShreds(index + 1, limit);
-              }
-              else {
-                for (var i=0 ; i < limit; i++) {
-                  shredIDs.push('shred_'+i);
+            /* const newShredID = */ generateShredID((newShredID)=>{
+              shredIDs.push(newShredID);
+
+              bufferToFile(`${pre_send_path}/${newShredID}`, shreds[index], () => {
+                if (index < limit - 1) {
+                  saveShreds(index + 1, limit);
                 }
-                readFileMap((fileMap) => {
-                  const fileMapSize = Object.keys(fileMap).length;
-                  const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
-                  const fileMapEntry = {
-                    name: filename,
-                    shreds: shredIDs,
-                    key: key,
-                    salt: 3463648646387,
-                    parity: parity,
-                    NShreds: NShreds,
-                    shardLength: shardLength,
-                    deadbytes: deadbytes
-                  }
-                  const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
-                  addFileMapEntry(lastFileID == '' ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
-                    callback(shredIDs);
+                else {
+                  readFileMap((fileMap) => {
+                    const fileMapSize = Object.keys(fileMap).length;
+                    const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
+                    const fileMapEntry = {
+                      name: filename,
+                      shreds: shredIDs,
+                      key: key,
+                      salt: crypto.randomBytes(256),
+                      parity: parity,
+                      NShreds: NShreds,
+                      shardLength: shardLength,
+                      deadbytes: deadbytes
+                    }
+                    const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
+                    addFileMapEntry(lastFileID == '' ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
+                      callback(shredIDs);
+                    });
                   });
-                });
-              }
+                }
+              });
             });
+
           };
           const limit = shreds.length;
           saveShreds(0, limit);
@@ -253,8 +260,11 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
   });
 }
 
+
 function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   let buffer = new Buffer([]);
+
+  // REFACTOR ME !!
 
   readFileMap((fileMap) => {
     const file = fileMap[fileID];
@@ -320,6 +330,83 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
+function upload(filepath, callback) { //  to upload a file in Lynks
+
+    // call peer.getPeers()
+    // peer selection ^
+
+    //  --------------------fixed,need to change-------------------
+
+  const hosts = []
+  for (let f = 0; f < 30; f++)
+  {
+    hosts.push({ ip: '10.7.57.202', port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+  }
+  const key = 'FOOxxBAR';
+
+  //  --------------------fixed,need to change-------------------
+
+  const NShreds = 10;
+  const parity = 2;
+
+
+
+  const fileName = path.basename(filepath);
+  const fileDirectory = path.dirname(filepath);
+  const shredsPath='/home/yehia/git-Hub/lynks-client/pre_send/';
+
+
+  shredFile(fileName, filepath, key, NShreds, parity, (shredIDs) => {
+    console.log ('done shredding');
+
+    //  NO NEED TO READ THE FILE, THE CALLBACK OF shredFile has this shredIDs retunred
+
+
+    async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
+
+
+        storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,shredsPath, () => { // sending to a single Peer
+          asyncCallback();
+        });
+
+    }, (err) => { // after all shreds are uploaded , or an error was raised
+
+      if(err) { console.log('error in Uploading shreds to Peers !'); return err; }
+      console.log('done sending shreds');
+
+
+      for (var index in shredIDs) { // remove  shreds , async
+        fs.unlink(shredsPath + shredIDs[index], () => {});
+          }
+
+          async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shred-host pairs in DHT
+
+            saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
+
+              if(err)  {  console.log('error in Uploading shred'+ val +'  to DHT !'); asyncCallback(err); }
+              console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
+
+              asyncCallback();
+            });
+
+          }, (err) => { // after all shred-host pairs are uploaded on DHT
+
+            if(err)  {  console.log('error in Uploading shreds to DHT !'); asyncCallback(err); }
+            console.log('done Uploading shreds to DHT');
+
+            callback();
+          });
+        });
+    });
+}
+
+function download(fileID,callback){  //to upload a file in Lynks
+
+  console.log('lesa ya baba');
+
+
+}
+
 export {
   generateFileID,
   fileToBuffer,
@@ -338,5 +425,6 @@ export {
   removeFileMapEntry,
   readFileMap,
   shredFile,
-  reconstructFile
+  reconstructFile,
+  upload
 };

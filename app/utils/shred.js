@@ -5,7 +5,7 @@ import socketclient from 'socket.io-client';
 
 import { node } from './peer';
 
-function generateShredID(cb) {
+function generateShredID(cb) { // generateShredID
 
    const checkUniqueness = (key) => {
      retrieveHosts(key, (value) => {
@@ -21,10 +21,12 @@ function generateShredID(cb) {
      })
    }
 
-   checkUniqueness(kad.utils.getRandomKeyString());
+  //  checkUniqueness(kad.utils.getRandomKeyString());
+  cb (kad.utils.getRandomKeyString());
 }
 
-function saveHost(shredID,hostID,callback) {
+function saveHost(shredID,hostID,callback) { //  function to save the shred-host pair on the DHT
+
 
   //store (shred, host) in DHT`
     //node:KadmeilaNode
@@ -44,7 +46,9 @@ function saveHost(shredID,hostID,callback) {
 
 }
 
-function retrieveHosts(key, callback) {
+function retrieveHosts(key, callback) { //  function to retrieve a shred-host pair on the DHT
+
+
   // load (shred, host) from DHT
     //node:KadmeilaNode
     //key: buffer
@@ -56,7 +60,7 @@ function retrieveHosts(key, callback) {
 
 }
 
-function sendShredHandler(socket, shredID, shredsPath, callback) {
+function sendShredHandler(socket, shredID, shredsPath, callback) { // steup for sending shreds
   const delivery = dl.listen(socket);
   delivery.connect();
 
@@ -75,8 +79,8 @@ function sendShredHandler(socket, shredID, shredsPath, callback) {
   });
 }
 
-function getShredHandler(socket, shredID, shredsPath, callback) {
-  console.log('HUUUU');
+function getShredHandler(socket, shredID, shredsPath, callback) { // steup for recieving shreds
+  console.log('listening to receive ...');
 
   const delivery = dl.listen(socket);
 
@@ -94,20 +98,24 @@ function getShredHandler(socket, shredID, shredsPath, callback) {
   });
 }
 
-function storeShredRequest(ip, port, shredID, shredsPath, callback) {
+function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a shred TO  a Peer
   const socket = socketclient(`http://${ip}:${port}`);
 
   socket.emit('store_shred', { shredID });
+
+  // steup for sending shreds
   sendShredHandler(socket, shredID, shredsPath, (err) => {
     if (err) return console.log(err);
     callback();
   });
 }
 
-function getShredRequest(ip, port, shredID, shredsPath, callback) {
+function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a shred FROM a Peer
   const socket = socketclient(`http://${ip}:${port}`);
 
   socket.emit('retrieve_shred', { shredID });
+
+  // steup for recieving shreds
   getShredHandler(socket, shredID, shredsPath, (err) => {
     if (err) return console.log(err);
     callback();
