@@ -54,7 +54,7 @@ function retrieveHosts(key, callback) { //  function to retrieve a shred-host pa
     //key: buffer
   node.iterativeFindValue(key, (err, value, contacts) => {
     if (err) return console.log(err);
-    callback (value, contacts)
+    callback (err,value, contacts)
   }) ;
 
 
@@ -80,7 +80,7 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // steup for 
 }
 
 function getShredHandler(socket, shredID, shredsPath, callback) { // steup for recieving shreds
-  console.log('listening to receive ...');
+  // console.log('listening to receive ...');
 
   const delivery = dl.listen(socket);
 
