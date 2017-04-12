@@ -3,23 +3,23 @@ import ip from 'ip'
 
 import { initHost, node } from './app/utils/peer';
 
-const myport = 1337;
+const myport = 8080;
 const networkID = 'YEHIA_HESHAM_SAIDAUC';
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: ip.address(), port: 8080 }            // change into seed's id
+  { hostname: ip.address(), port: 8080 }
 ];
 
 initHost(myport, networkID, seed, () => {
 
     node.plugin(quasar);
 
-    var content = 'Sup dudes?'
-
-    node.quasarPublish('icanhost', {
-      hey: content
+    node.quasarSubscribe('icanhost', (content) => {
+      node.logger.info(content);
+      console.log('Recieved published content');
     });
 
-    console.log('Published');
+    console.log('Subscribed');
+
 });

@@ -38,6 +38,8 @@ function initDHT(ip, port, networkID, seed, callback) {
     identity: Buffer.from(networkID)
   });
 
+
+
   const logsOn = false;
 
   if (logsOn) {
@@ -56,10 +58,9 @@ function initDHT(ip, port, networkID, seed, callback) {
   node.listen(port, () => {
     node.join(seed, () => {
       console.log('Successfuly connected to Seed '+seed[1]['hostname']+':'+seed[1]['port']);
-      callback()
+      callback();
     })
   });
-
 }
 
 function initFileDelivery(port, callback) {
@@ -96,7 +97,7 @@ function initFileDelivery(port, callback) {
 function initHost( port, networkID, seed, callback) {
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
-      callback();
+      callback(node);
     });
   });
 }
