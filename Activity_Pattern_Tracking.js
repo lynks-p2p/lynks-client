@@ -60,7 +60,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
       console.log('\tActivityParts = '+ activityParts);
       console.log('\tPartsPerDay = '+ partsPerDay);
       console.log('\tPartsPerHour = '+ partsPerHour);
-      console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+deltaMinutes);
+      console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+(deltaMinutes-1));
       console.log('-------------------- Tracking Activity Pattern --------------------');
       console.log(new Date().toString());
       setInterval(()=> { // loop untill activity period finished
@@ -71,14 +71,11 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
             console.log('\tonline');
             var date = new Date();
             const index = (date.getDay()*partsPerDay)  +  (date.getHours()*partsPerHour) + Math.floor(date.getMinutes()/deltaMinutes);
-            console.log('here1');
-            console.log(index);
-            console.log(activity.length);
             activity[index] =  1; // online
             console.log('here2');
             bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Updated')});
             console.log('here3');
-            if(index==0) // resets if it was Sunday  00:00 => 00:deltaMinutes
+            if(index==0) // resets if it was Sunday  00:00 => 00:(deltaMinutes-1)
             {
               console.log('-------------------- Reseting Activity Pattern --------------------');
               console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+(deltaMinutes-1));
@@ -108,6 +105,8 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 // loadActivityPattern((activity)=>{
 //   console.log('activity file path was loaded using the Defaults activityPath');
 //   console.log('activity.length '+activity.length);
+//   const v= new Date();
+//   console.log(v.getDay());
 // });
 
 console.log('Tracking  using the Defaults activityPath');
