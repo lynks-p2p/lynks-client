@@ -79,4 +79,4 @@ function loadActivityPattern(path,callback) { // asynchronouslly loads the Activ
  trackActivityPattern(1,1);
 
 //  you can also load in sync. way
- activity = fs.readFileSync('activity.txt').toString().split(','); /
+ activity = fs.readFileSync('activity.txt').toString().split(','); 
