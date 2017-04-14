@@ -97,7 +97,7 @@ function initFileDelivery(port, callback) {
 function initHost( port, networkID, seed, callback) {
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
-      callback(node);
+      callback();
     });
   });
 }
