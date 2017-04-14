@@ -1,9 +1,7 @@
-import {  bufferToFile , fileToBuffer  } from './app/utils/file'
+import {  bufferToFile } from './app/utils/file'
 const fs = require('fs')
 const isOnline = require('is-online');
 
-
-let activity; // export this !
 
 
 function loadActivityPattern(callback,activityPath) { // asynchronouslly loads the Activity Pattern
@@ -56,7 +54,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
   {
 
-    loadActivityPattern(()=>{
+    loadActivityPattern((activity)=>{
 
       console.log('Successfuly load of the Activity Pattern !');
       console.log('\tActivityParts = '+ activityParts);
@@ -64,7 +62,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
       console.log('\tPartsPerHour = '+ partsPerHour);
       console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+deltaMinutes);
       console.log('-------------------- Tracking Activity Pattern --------------------');
-
+      console.log(new Date().toString());
       setInterval(()=> { // loop untill activity period finished
         isOnline().then(online =>{ // check for online conectivity
 
@@ -73,13 +71,17 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
             console.log('\tonline');
             var date = new Date();
             const index = (date.getDay()*partsPerDay)  +  (date.getHours()*partsPerHour) + Math.floor(date.getMinutes()/deltaMinutes);
+            console.log('here1');
+            console.log(index);
+            console.log(activity.length);
             activity[index] =  1; // online
+            console.log('here2');
             bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Updated')});
-
+            console.log('here3');
             if(index==0) // resets if it was Sunday  00:00 => 00:deltaMinutes
             {
               console.log('-------------------- Reseting Activity Pattern --------------------');
-              console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+deltaMinutes);
+              console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+(deltaMinutes-1));
               activity  = Array.apply(null, Array(  Math.ceil(activityDays * partsPerDay)  ) ).map(Number.prototype.valueOf,0);
               bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Reseted')});
             }
@@ -96,14 +98,16 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 }
 
 
-// loadActivityPattern((activity)=>{
-//   console.log('activity file path was loaded using the Defaults activityPath');
+
 //
-// });
-
-
 // createActivityPatternFile((activity)=>{
 //   console.log('\tActivity file was Created using the Defaults parameters');
+//   trackActivityPattern(1,1,'testing.txt');
+// },1,1,'testing.txt');
+
+// loadActivityPattern((activity)=>{
+//   console.log('activity file path was loaded using the Defaults activityPath');
+//   console.log('activity.length '+activity.length);
 // });
 
 console.log('Tracking  using the Defaults activityPath');
