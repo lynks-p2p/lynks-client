@@ -70,13 +70,17 @@ function loadActivityPattern(path,callback) { // asynchronouslly loads the Activ
  trackActivityPattern();
 
 //  Load the user's Activity Pattern
- loadActivityPattern('ActivityPattern.txt',()=>{
-   console.log('Successfuly load the Activity Pattern !');
- });
+ // loadActivityPattern('ActivityPattern.txt',()=>{
+ //   console.log('Successfuly load the Activity Pattern !');
+ // });
 
+
+
+
+// ---------ALSO--------------
 
 // you can also Track under specified deltaMinutes, activityDay
- trackActivityPattern(1,1);
+ // trackActivityPattern(1,1);
 
 //  you can also load in sync. way
- activity = fs.readFileSync('activity.txt').toString().split(','); /
+ //activity = fs.readFileSync('activity.txt').toString().split(',');
