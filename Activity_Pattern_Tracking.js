@@ -1,15 +1,50 @@
-import {  bufferToFile  } from './app/utils/file'
+import {  bufferToFile , fileToBuffer  } from './app/utils/file'
 const fs = require('fs')
 const isOnline = require('is-online');
 
 
 let activity; // export this !
 
-function trackActivityPattern( deltaMinutes, activityDays ) { //  Track user's Activity Pattern and saves it to a file named activity.txt
+
+function loadActivityPattern(callback,activityPath) { // asynchronouslly loads the Activity Pattern
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.txt';
+
+  fs.readFile(activityPath, function(err, f){
+    if(err){ return console.error('Failed To load the Activity Pattern file on path: '+ activityPath );   }
+    callback(f.toString().split(','));
+  });
+}
+
+function createActivityPatternFile(callback,deltaMinutes, activityDays, activityPath) { // asynchronouslly Creates the Activity Pattern File
 
   // Defaults :
   deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
   activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.txt';
+
+  //calculated variables
+  const partsPerHour = Math.ceil(60/deltaMinutes);
+  const partsPerDay  = Math.ceil(24*60/deltaMinutes);
+  const activityParts = Math.ceil(activityDays * partsPerDay)
+
+  //  initalize your activity with all offline, Zero !
+  activity = Array.apply(null, Array(activityParts) ).map(Number.prototype.valueOf,0);
+
+  bufferToFile(activityPath,activity,()=>{ // Created Activity Pattern File
+    console.log('Successfuly Created Activity Pattern File !')
+    callback(activity);
+  });
+
+}
+
+
+function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /*  Track user's Activity Pattern &  Update the Activity Pattern File.
+    Days: 0 Sunday, 1 Monday, 2 Tuesday, and etc. Minutes: between  0-59. Hours: between 0 and 23.     */
+
+  // Defaults :
+  deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
+  activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.txt';
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -17,70 +52,68 @@ function trackActivityPattern( deltaMinutes, activityDays ) { //  Track user's A
   const activityParts = Math.ceil(activityDays * partsPerDay)
   var the_interval = deltaMinutes * 60 * 1000;
 
-  //initalize your activity with all offline, Zero !
-  activity= Array.apply(null, Array(activityParts) ).map(Number.prototype.valueOf,0);
-  var activitycounter=0;
 
+  if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
+  {
 
+    loadActivityPattern(()=>{
 
-  console.log('activityParts = '+ activityParts);
-  console.log('partsPerDay = '+ partsPerDay);
-  console.log('partsPerHour = '+ partsPerHour);
-  console.log('-------------------- Tracking Activity Pattern --------------------');
+      console.log('Successfuly load of the Activity Pattern !');
+      console.log('\tActivityParts = '+ activityParts);
+      console.log('\tPartsPerDay = '+ partsPerDay);
+      console.log('\tPartsPerHour = '+ partsPerHour);
+      console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+deltaMinutes);
+      console.log('-------------------- Tracking Activity Pattern --------------------');
 
+      setInterval(()=> { // loop untill activity period finished
+        isOnline().then(online =>{ // check for online conectivity
 
+          if(online)
+          {
+            console.log('\tonline');
+            var date = new Date();
+            const index = (date.getDay()*partsPerDay)  +  (date.getHours()*partsPerHour) + Math.floor(date.getMinutes()/deltaMinutes);
+            activity[index] =  1; // online
+            bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Updated')});
 
-  //  minutes between  0-59, hours between 0 and 23
-  //  0 Sunday, 1 Monday, 2 Tuesday, and etc
+            if(index==0) // resets if it was Sunday  00:00 => 00:deltaMinutes
+            {
+              console.log('-------------------- Reseting Activity Pattern --------------------');
+              console.log('\tReseting Date is Sunday, Hour 00, and at any minute betwwen 00 and '+deltaMinutes);
+              activity  = Array.apply(null, Array(  Math.ceil(activityDays * partsPerDay)  ) ).map(Number.prototype.valueOf,0);
+              bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Reseted')});
+            }
+          } else console.log('\toffline');
 
-  setInterval(()=> { // loop untill activity period finished
-    activitycounter++;
-    console.log(activitycounter+'/'+activityParts);
-    isOnline().then(online =>{ // check for online conectivity
+        });
+      }, the_interval);
 
-      if(online)
-      {
-        console.log('\tonline');
-        var date = new Date();
-        const index = (date.getDay()*partsPerDay)  +  (date.getHours()*partsPerHour) + Math.floor(date.getMinutes()/deltaMinutes);
-        activity[index] =  1; // online
-        bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tupdated')});
-        if(activitycounter==activityParts-1) //  reset the activity back again
-        {
-          console.log('-------------------- Reseting Activity Pattern --------------------');
-          activity  = Array.apply(null, Array(  Math.ceil(activityDays * partsPerDay)  ) ).map(Number.prototype.valueOf,0);
-          activitycounter=0;
-        }
-      }
-      else console.log('\toffline');
     });
-  }, the_interval);
+  } else {  //  Activity Pattern File doesn't exit
 
-}
-
-function loadActivityPattern(path,callback) { // asynchronouslly loads the Activity Pattern
-
-  fs.readFile(path, function(err, f){
-    activity = f.toString().split(',');
-  });
+    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
+    }
 }
 
 
-//  Track user's Activity Pattern
- trackActivityPattern();
-
-//  Load the user's Activity Pattern
- // loadActivityPattern('ActivityPattern.txt',()=>{
- //   console.log('Successfuly load the Activity Pattern !');
- // });
+// loadActivityPattern((activity)=>{
+//   console.log('activity file path was loaded using the Defaults activityPath');
+//
+// });
 
 
+createActivityPatternFile((activity)=>{
+  console.log('\tActivity file was Created using the Defaults parameters');
+  console.log('Tracking  using the Defaults activityPath');
+  trackActivityPattern();
+});
 
 
-// ---------ALSO--------------
 
-// you can also Track under specified deltaMinutes, activityDay
- // trackActivityPattern(1,1);
+// you can also Track under specified deltaMinutes, activityDay, and activityPath
 
-//  you can also load in sync. way
- //activity = fs.readFileSync('activity.txt').toString().split(',');
+   // trackActivityPattern(2);  //deltaMinutes=2,activityDays=7,activityPath='ActivityPattern.txt'
+
+   // trackActivityPattern(2,11); //deltaMinutes=2,activityDays=11,activityPath='ActivityPattern.txt'
+
+   // trackActivityPattern(2,11,'anyfilepath.txt');//deltaMinutes=2,activityDays=11,activityPath='anyfilepath.txt'
