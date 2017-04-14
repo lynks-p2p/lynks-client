@@ -102,12 +102,12 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 // });
 
 
-createActivityPatternFile((activity)=>{
-  console.log('\tActivity file was Created using the Defaults parameters');
-  console.log('Tracking  using the Defaults activityPath');
-  trackActivityPattern();
-});
+// createActivityPatternFile((activity)=>{
+//   console.log('\tActivity file was Created using the Defaults parameters');
+// });
 
+console.log('Tracking  using the Defaults activityPath');
+trackActivityPattern();
 
 
 // you can also Track under specified deltaMinutes, activityDay, and activityPath
