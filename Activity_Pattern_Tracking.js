@@ -72,9 +72,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
             var date = new Date();
             const index = (date.getDay()*partsPerDay)  +  (date.getHours()*partsPerHour) + Math.floor(date.getMinutes()/deltaMinutes);
             activity[index] =  1; // online
-            console.log('here2');
             bufferToFile('ActivityPattern.txt',activity,()=>{console.log('\tActivity Pattern Updated')});
-            console.log('here3');
             if(index==0) // resets if it was Sunday  00:00 => 00:(deltaMinutes-1)
             {
               console.log('-------------------- Reseting Activity Pattern --------------------');
