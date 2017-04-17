@@ -12,7 +12,7 @@ const seed = [
 
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
 
-  { hostname: myIP, port: 2346 }
+  { hostname: '10.40.32.1', port: 2346 }
 
 ];
 

@@ -58,11 +58,13 @@ function getFileList() {
 
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
+    console.log('exists');
     fs.readFile(path, (err, data) => {
       if (err) return callback(0);
       return callback(data);
     });
   }
+  else return callback(0);
 }
 
 function bufferToFile(path, buffer, callback) {
@@ -258,6 +260,11 @@ function removeFileMapEntry(fileID, callback) {
 
 function shredFile(filename, filepath, key, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
+    if (!loadedBuffer){
+      console.log('buffer not loaded');
+      console.log(loadedBuffer);
+      return callback(0);
+    }
     compress(loadedBuffer, (compressedBuffer) => {
       encrypt(compressedBuffer, key, (encryptedBuffer) => {
         erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
@@ -287,7 +294,7 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                     }
                     const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
                     addFileMapEntry(lastFileID == '' ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
-                      callback(shredIDs);
+                      return callback(shredIDs);
                     });
                   });
                 }
@@ -387,14 +394,14 @@ function upload(filepath, callback) { //  to upload a file in Lynks
     // peer selection ^
 
     //  --------------------fixed,need to change-------------------
-
+  console.log(1);
   const hosts = []
   for (let f = 0; f < 30; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: '10.0.3.15', port: 2346, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+    hosts.push({ ip: '10.40.32.1', port: 2346, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
   }
-
+  console.log(2);
   /*for (let f = 0; f < 15; f++)
   {
     //10.7.57.202
@@ -415,12 +422,15 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
 
   shredFile(fileName, filepath, key, NShreds, parity, (shredIDs) => {
-
+    if (!shredIDs) {
+      console.log(shredIDs);
+      console.log('file does not exist');
+      return callback(1);
+    }
     console.log ('Done shredding');
     async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
-
-
-        storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val, pre_send_path, () => { // sending to a single Peer
+        storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val, pre_send_path, (err) => { // sending to a single Peer
+          console.log('error: '+err);
           asyncCallback();
         });
 
@@ -428,8 +438,6 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
       if(err) { console.log('error in Uploading shreds to Peers !'); return err; }
       console.log('Done Sending Shreds');
-
-
       for (var index in shredIDs) { // remove  shreds , async
         if(fs.existsSync(filepath)){
           fs.unlink(pre_send_path + shredIDs[index], () => {});
@@ -451,7 +459,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
             if(err)  {  console.log('error in Uploading shreds to DHT !'); asyncCallback(err); }
             console.log('done Uploading shreds to DHT');
 
-            callback();
+            return callback(0);
           });
         });
     });

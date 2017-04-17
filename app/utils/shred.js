@@ -99,16 +99,24 @@ function getShredHandler(socket, shredID, shredsPath, callback) { // setup for r
     });
   });
 }
-
+var x=0;
 function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a shred TO  a Peer
+  console.log('connecting to: '+ip+':'+port);
   const socket = socketclient(`http://${ip}:${port}`);
-
+  socket.on('connect_error', function() {
+      socket.disconnect();
+      return callback(1);
+   });
   socket.emit('store_shred', { shredID });
-
+  socket.on('shred_retrieve_fail', function() {
+      console.log('failed to retrieve a shred');
+      socket.disconnect();
+      return callback(2);
+   });
   // steup for sending shreds
   sendShredHandler(socket, shredID, shredsPath, (err) => {
     if (err) return console.log(err);
-    callback();
+    else return callback(0);
   });
 }
 
@@ -116,6 +124,7 @@ function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a 
   const socket = socketclient(`http://${ip}:${port}`);
   socket.on('connect_error', function() {
       console.log('couldnt connect');
+      socket.disconnect();
       return callback(1);
    });
   socket.emit('retrieve_shred', { shredID });
@@ -127,7 +136,7 @@ function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a 
   // steup for recieving shreds
   getShredHandler(socket, shredID, shredsPath, (err) => {
     if (err) return console.log(err);
-    return callback(0);
+    else return callback(0);
   });
 }
 
