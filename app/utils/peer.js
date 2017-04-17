@@ -114,7 +114,10 @@ function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds
     send_store_request(public_ip, public_port, shredIDs, (path) => {
       var fs = require ('fs');
       for (var index in shredIDs) {
-        fs.unlink(path + shredIDs[index], () => {});
+        const filepath = path + shredIDs[index];
+        if (fs.existsSync(filepath)) {
+          fs.unlink(path + shredIDs[index], () => {});
+        }
       }
     });
   });
@@ -158,4 +161,4 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
   });
 }
 
-export { node, getPeers, initHost, initFileDelivery, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost, initDHT, initFileDelivery, shred_and_send, receive_and_gather };
