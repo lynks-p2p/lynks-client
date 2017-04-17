@@ -10,6 +10,7 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
+import {readFilesNames} from '../utils/state';
 
 const leftpaper = {
   position: 'relative',
@@ -42,7 +43,7 @@ class LynksVault extends Component {
   constructor() {
     super();
     this.state = {
-      files: []
+      files: readFilesNames()
     };
   }
   handleChange = (e, results) => {
