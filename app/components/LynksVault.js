@@ -10,7 +10,7 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
-import {readFilesNames, fileMapPath} from '../utils/state';
+import {readFilesNames, fileMapPath, key, NShreds, parity} from '../utils/state';
 import {shredFile} from '../utils/file';
 
 const leftpaper = {
@@ -48,14 +48,14 @@ class LynksVault extends Component {
     };
   }
   handleChange = (e, results) => {
-    // shredFile(fileMapPath, (shredIDs)=>{
-    //   console.log(shredIDs);
-    // });
     const files = this.state.files.slice();
     console.log(results);
     results.forEach(result => {
       const [e, file] = result;
       files.push(file.name);
+      shredFile(file.name,file.path,key,NShreds,parity, (shredIDs) => {
+        console.log(shredIDs);
+      })
     });
     this.setState({ files: files });
   }
