@@ -1,3 +1,4 @@
+/* eslint-disable */
 import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
@@ -10,8 +11,8 @@ import { storeShredRequest, getShredRequest, generateShredID, saveHost, retrieve
 import { node } from './peer';
 
 
-const fileMapPath = 'filemap.json';
-const pre_send_path = './pre_send/';
+const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
+const pre_send_path = '/home/chouaib/Lynks/lynks-client/pre_send';
 const pre_store_path = './pre_store/';
 
 
