@@ -369,13 +369,13 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   for (let f = 0; f < 15; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: '10.40.32.116', port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+    hosts.push({ ip: '10.40.36.28', port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
   }
 
   for (let f = 0; f < 15; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: '10.40.32.116', port: 2346, id: Buffer.from('TEST_2_YEHIA_HESHAMZ').toString('hex') })
+    hosts.push({ ip: '10.40.36.28', port: 2346, id: Buffer.from('abcdefghijabcdefghij').toString('hex') })
   }
 
   const key = 'FOOxxBAR';
@@ -445,88 +445,99 @@ function download(FileID,callback){  //to upload a file in Lynks
       console.log('searching for the peerID of each shredID');
 
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
-        retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
+          retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
 
-          if(err)  {  console.log('error in getting peerID for shredID '+ shredKey +'  from DHT !'); asyncCallback(err); }
+            if(err)  { asyncCallback('error in getting peerID for shredID '+ shredKey +'  from DHT !'); }
+            console.log('ShredID '+ shredKey +', at HostID ' + PeerID.value);
 
-          console.log('ShredID '+ shredKey +', at HostID ' + PeerID.value);
+            //iterativeFindNode: Basic kademlia lookup operation that builds a set of K contacts closest to the given key
 
-          //iterativeFindNode: Basic kademlia lookup operation that builds a set of K contacts closest to the given key
+            node.iterativeFindNode( PeerID.value, (error, contacts)=>{ // 2) get IP & Port via PeerID
+              if (error)  { console.log('\terror in getting Peer info for PeerID '+ PeerID.value.hostname); asyncCallback(error); }
 
-          node.iterativeFindNode( PeerID.value, (error, contacts)=>{ // 2) get IP & Port via PeerID
-            if (error)  { console.log('\terror in getting Peer info for PeerID '+ PeerID.value.hostname); asyncCallback(error); }
+              const host= node.router.getContactByNodeId(PeerID.value);
+              if(host==undefined) {
+                // return asyncCallback('error!, PeerID is not in router. PeerID might be offline');
+                console.error('error!, PeerID is not in router. PeerID might be offline');
+                return asyncCallback();
 
-            const host= node.router.getContactByNodeId(PeerID.value);
-            if(host==undefined) {
-              return asyncCallback(console.error('error!, PeerID is not in router. PeerID might be offline')  );
+              }
+
+              const hostIP = host.hostname
+              const hostPort = host.port
+
+              console.log('\tget shredID '+ shredKey +' via '  + hostIP + ':' + hostPort);
+              shredPeerInfo.push({ shred:shredKey, ip:hostIP, port:hostPort})
+              asyncCallback();
+            });
+          });
+      }, (err) => { // after retrieving all shred-host pairs & their info
+
+        if(err)  {  console.log(err); return callback(err); }
+        console.log('Done retrieving all shred-host pairs from DHT');
+        console.log('Receiving Shreds Now ..... ');
+
+        var receivedCount = 0; // # of recieved Shreds
+        const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
+
+        async.doWhilst(
+          (whilst_callback)=>{ // try recieve the remanning shreds
+
+            const shredPeerInfo_min = [];
+            for(var i=0; i<NShreds-receivedCount;i++)
+            {
+              shredPeerInfo_min.push(shredPeerInfo.pop());
             }
+            async.eachOf(shredPeerInfo_min, (request, index, eachOf_callback) =>{ //  loop to retrieving shreds in parallel.
+                        getShredRequest(request.ip, request.port, request.shred, pre_store_path, ()=> { // retrieving a single shred
+                            receivedCount++;
+                            console.log(receivedCount+'/'+NShreds);
+                            receivedShredIDs.push(request.shred);
+                            eachOf_callback();
+                          });
 
-          const hostIP = host.hostname
-          const hostPort = host.port
+                        },(err, n)=> { // file transmition finished
 
-          console.log('\tget shredID '+ shredKey +' via '  + hostIP + ':' + hostPort);
-          shredPeerInfo.push({ shred:shredKey, ip:hostIP, port:hostPort})
-          asyncCallback();
-        });
-      });
-    }, (err) => { // after retrieving all shred-host pairs & their info
-
-      if(err)  {  console.log('\terror in retrieving shred-host pairs from DHT !'); asyncCallback(err); }
-      console.log('Done retrieving all shred-host pairs from DHT');
-      console.log('Receiving Shreds Now ..... ');
-
-      var receivedCount = 0; // # of recieved Shreds
-      const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
-
-      //  TODO : Working,but recieving unnecessary 20 shreds. Needs revision on How to stop the unnecessary retrievals. How to know if a retrieval failed ?
-
-      async.eachOf(shredPeerInfo, (request, index, eachOf_callback) =>{ //  loop to retrieving shreds in parallel.
-
-                  if( receivedCount > NShreds)  return eachOf_callback(); //  if recieved the min. return
-                  getShredRequest(request.ip, request.port, request.shred, pre_store_path, ()=> { // retrieving a single shred
-                    receivedCount++;
-                    if( receivedCount > NShreds)  return eachOf_callback(); //  if recieved the min. return
-                      console.log(receivedCount+'/'+NShreds);
-                      receivedShredIDs.push(request.shred);
-                      eachOf_callback();
-                    });
-
-                    },(err, n)=> { // reconstruct File, after recieving the min. shreds
-
-                      console.log('Total received Count is '+receivedCount);
-                      console.log('will reconstruct via '+ receivedShredIDs.length +' shredIDs: ');
-                      console.log(receivedShredIDs);
-
-                      // constructing the target binary string
-                      var requiredShreds = [];
-                      var targets = 0x3FFFFFFF;
-
-                        //  using asyc lib to ensure this flow of loops
-                      async.eachOfSeries(shredIDs,(originalShred, index, eachOfSeries_callback_)=>{ // 1st loop to create the binary string
-                        var exists;
-                        if (receivedShredIDs.indexOf(originalShred) > -1) exists=index;
-                        else exists=0;
-                        requiredShreds.push(exists);
-                        eachOfSeries_callback_();
-
-                      },(err)=>{ // finished 1st loop
-                            var targets = 0x3FFFFFFF;
-                            async.eachSeries(requiredShreds,(required, eachSeries_callback_)=>{ // 2nd loop to create the targets
-                              targets ^= (1 << required);
-                              eachSeries_callback_();
-
-                            },(err)=>{ // finished 2nd loop. Reconstructing File here
-
-                                // console.log('targets: ' + targets.toString(2));
-                                console.log('Reconstructing File ...');
-                                reconstructFile(FileID, targets, shredIDs, pre_store_path, () => {
-                                    console.log('File Reconstructed');
-                                    callback();
-                                  });
-                              });
-                            });
+                            console.log('Total received Count is '+receivedCount);
+                            whilst_callback();
                         });
-              });
+          },
+            ()=> { return receivedCount > NShreds ; }, // test function
+            (err,)=> { // reconstruct File, after recieving the min. shreds
+
+                console.log('will reconstruct via '+ receivedShredIDs.length +' shredIDs: ');
+                console.log(receivedShredIDs);
+
+                // constructing the target binary string
+                var requiredShreds = [];
+                var targets = 0x3FFFFFFF;
+
+                  //  using asyc lib to ensure this flow of loops
+                async.eachOfSeries(shredIDs,(originalShred, index, eachOfSeries_callback_)=>{ // 1st loop to create the binary string
+                  var exists;
+                  if (receivedShredIDs.indexOf(originalShred) > -1) exists=index;
+                  else exists=0;
+                  requiredShreds.push(exists);
+                  eachOfSeries_callback_();
+
+                    },(err)=>{ // finished 1st loop
+                      var targets = 0x3FFFFFFF;
+                      async.eachSeries(requiredShreds,(required, eachSeries_callback_)=>{ // 2nd loop to create the targets
+                        targets ^= (1 << required);
+                        eachSeries_callback_();
+
+                        },(err)=>{ // finished 2nd loop. Reconstructing File here
+
+                          // console.log('targets: ' + targets.toString(2));
+                          console.log('Reconstructing File ...');
+                          reconstructFile(FileID, targets, shredIDs, pre_store_path, () => {
+                              console.log('File Reconstructed');
+                              callback();
+                              });
+                        });
+                    });
+                  });
+          });
     } else callback('error,bad fileID');  // bad fileID
   });
 }

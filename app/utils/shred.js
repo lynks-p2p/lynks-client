@@ -53,8 +53,12 @@ function retrieveHosts(key, callback) { //  function to retrieve a shred-host pa
     //node:KadmeilaNode
     //key: buffer
   node.iterativeFindValue(key, (err, value, contacts) => {
-    if (err) return console.log(err);
-    callback (err,value, contacts)
+    if (err){
+      console.log(err);
+      console.log("aaaaaaaaaaa");
+      return callback(err, null, null)
+    }
+    callback (null,value, contacts)
   }) ;
 
 
