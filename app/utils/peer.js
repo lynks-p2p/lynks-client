@@ -214,6 +214,40 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   }
 }
 
+
+function calculateMatching(hostactivity, callback, score) {            // the function recieves the host's activity in array form
+
+    const deltaMinutes =  10; // update activity every 10 min
+    const activityDays =  7; // activity for 1 week
+    const activityPath = 'ActivityPattern.txt';
+
+    //calculated variables
+    const partsPerHour = Math.ceil(60/deltaMinutes);
+    const partsPerDay  = Math.ceil(24*60/deltaMinutes);
+    const activityParts = Math.ceil(activityDays * partsPerDay)
+
+    if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
+    {
+
+      loadActivityPattern((activity)=>{
+
+        console.log('Successful load of Uploader Activity Pattern !');
+
+        var counter = 0;
+        for (var i = 0; i < activityParts; i++) {
+            if(hostactivity[i]==1 && activity[i]==1)
+                counter++;
+        }
+        callback(counter);
+      });
+    } else {  //  Activity Pattern File doesn't exit
+
+      return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
+    }
+}
+
+
+
 function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
   shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
     console.log ('done shredding');
