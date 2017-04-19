@@ -3,6 +3,23 @@ const fs = require('fs')
 const isOnline = require('is-online');
 
 
+function calculateHostAvailability(hostactivity, callback, score) {            // the function recieves the host's activity in array form
+
+    const deltaMinutes =  10; // update activity every 10 min
+    const activityDays =  7; // activity for 1 week
+
+    //calculated variables
+    const partsPerHour = Math.ceil(60/deltaMinutes);
+    const partsPerDay  = Math.ceil(24*60/deltaMinutes);
+    const activityParts = Math.ceil(activityDays * partsPerDay)
+
+    var counter = 0;
+    for (var i = 0; i < activityParts; i++) {
+        if(hostactivity[i]==1)                // calculate how much time was the host available
+            counter++;
+    }
+    callback(counter);
+}
 
 
 function calculateMatching(hostactivity, callback, score) {            // the function recieves the host's activity in array form
@@ -25,7 +42,7 @@ function calculateMatching(hostactivity, callback, score) {            // the fu
 
         var counter = 0;
         for (var i = 0; i < activityParts; i++) {
-            if(hostactivity[i]==1 && activity[i]==1)
+            if(hostactivity[i]==1 && activity[i]==1)                // calculate matching between host and uploader availability pattern
                 counter++;
         }
         callback(counter);
@@ -145,11 +162,20 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 //console.log('Tracking  using the Defaults activityPath');
 //trackActivityPattern();
 
-console.log('Calculating score of compatibility..');
+// console.log('Calculating score of compatibility..');
+//
+// loadActivityPattern((activity)=>{
+//   console.log('activity pattern of host is loaded..');
+//   calculateMatching(activity, (score)=>{
+//       console.log(score);
+//   });
+// });
+
+
+console.log('Calculating score of availability..');
 
 loadActivityPattern((activity)=>{
-  console.log('activity pattern of host is loaded..');
-  calculateMatching(activity, (score)=>{
+  calculateHostAvailability(activity, (score)=>{
       console.log(score);
   });
 });

@@ -248,6 +248,10 @@ function calculateMatching(hostactivity, callback, score) {            // the fu
 
 
 
+
+
+
+
 function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
   shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
     console.log ('done shredding');
