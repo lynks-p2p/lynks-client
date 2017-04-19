@@ -399,7 +399,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   for (let f = 0; f < 30; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: '10.40.32.1', port: 2346, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+    hosts.push({ ip: '192.168.1.8', port: 2346, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
   }
   console.log(2);
   /*for (let f = 0; f < 15; f++)
@@ -506,7 +506,7 @@ function download(FileID,callback){  //to upload a file in Lynks
       console.log('Done retrieving all shred-host pairs from DHT');
       console.log('Receiving Shreds Now ..... ');
 
-      var receivedCount = 0; // # of recieved Shreds
+      var missedShreds = 0, receivedCount = 0; // # of recieved Shreds
       const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
 
       //  TODO : Working,but recieving unnecessary 20 shreds. Needs revision on How to stop the unnecessary retrievals. How to know if a retrieval failed ?
