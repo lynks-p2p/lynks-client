@@ -247,7 +247,52 @@ function calculateMatching(hostactivity, callback, score) {            // the fu
 }
 
 
+function calculateHostAvailability(hostactivity, callback, score) {            // the function recieves the host's activity in array form
 
+    const deltaMinutes =  10; // update activity every 10 min
+    const activityDays =  7; // activity for 1 week
+
+    //calculated variables
+    const partsPerHour = Math.ceil(60/deltaMinutes);
+    const partsPerDay  = Math.ceil(24*60/deltaMinutes);
+    const activityParts = Math.ceil(activityDays * partsPerDay)
+
+    var counter = 0;
+    for (var i = 0; i < activityParts; i++) {
+        if(hostactivity[i]==1)                // calculate how much time was the host available
+            counter++;
+    }
+    callback(counter);
+}
+
+
+
+function calculateHostScore(ip, hostactivity, callback, score) {            // the function recieves the host's activity in array form
+
+    var score = 0;
+
+    var matching_weight = 0.45
+    var availability_weight = 0.35
+    var latency_weight = 0.2
+
+    calculateMatching(hostactivity, (match)=>{
+      //console.log(score);
+      calculateHostAvailability(hostactivity, (availability)=>{
+          //console.log(score);
+          getPeerLatency(ip, (latency)=>{
+              //console.log(score);
+              console.log(match);
+              console.log(availability);
+              console.log(latency['avg']);                  //maximum acceptable latency = 500mss
+
+              var totalscore = (0.45*match/1008) + (0.35*availability/1008) + (0.2*(0.5-latency['avg'])/0.5);
+
+
+              callback(totalscore);
+          });
+      });
+    });
+}
 
 
 
@@ -302,4 +347,4 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
   });
 }
 
-export { node, getPeers, initHost,initDHT, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost,initDHT, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, shred_and_send, receive_and_gather };
