@@ -33,7 +33,8 @@ function initDHT(ip, port, networkID, seed, callback) {
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    storage: levelup('./DHT_Storage/'),
+    //storage: levelup('./DHT_Storage/'),
+    storage: levelup('./DHT_Storage2/'),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });
@@ -56,7 +57,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   node.listen(port, () => {
     node.join(seed, () => {
       console.log('Successfuly connected to Seed '+seed[1]['hostname']+':'+seed[1]['port']);
-      callback()
+      callback();
     })
   });
 
@@ -113,9 +114,10 @@ function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds
     console.log ('done shredding');
     send_store_request(public_ip, public_port, shredIDs, (path) => {
       var fs = require ('fs');
-      for (var index in shredIDs) {
-        fs.unlink(path + shredIDs[index], () => {});
-      }
+      const filepath = path + shredIDs[index];
+        if (fs.existsSync(filepath)) {
+          fs.unlink(path + shredIDs[index], () => {});
+        }
     });
   });
 }
@@ -139,7 +141,7 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
 
       var targets = 0x3FFFFFFF;
       // -1 ^ (3 << 30);
-      console.log('intial targets' + targets.toString(2));
+      console.log('initial targets' + targets.toString(2));
       // ~( target & 0);
       for (var i=0; i < requiredShreds.length; i++){
         // if (requiredShreds.indexOf(shredIDs[i]) >= 0) {
@@ -150,12 +152,16 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
       console.log('targets: ' + targets.toString(2));
       console.log('chosen shreds: ' + requiredShreds);
       send_shred_request(public_ip, public_port, requiredShreds, (shredspath) => {
-        reconstructFile(fileID, targets, shredIDs, shredspath, () => {
-          callback();
+        reconstructFile(fileID, targets, shredIDs, shredspath, (err) => {
+          if (err){
+            console.log(err);
+            //make a decision
+          }
+          else return callback(null);
         });
       });
-    } else callback('error');
+    } else return callback('error');
   });
 }
 
-export { node, getPeers, initHost, initFileDelivery, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost, initDHT, initFileDelivery, shred_and_send, receive_and_gather };
