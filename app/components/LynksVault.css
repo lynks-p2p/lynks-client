@@ -1,53 +1,21 @@
-/*.backButton {
-  position: absolute;
-}*/
-.leftpaper {
-  position: absolute;
-  float: left;
-  height: 100;
-  width: 100;
-  margin: 20;
-  textAlign: 'center';
-  display: 'inline-block';
-};
-.leftpaper {
-  position: absolute;
-  height: 100;
-  width: 100;
-  margin: 20;
-  textAlign: 'center';
-  display: 'inline-block';
-};
-.progress {
-  position: absolute;
-  margin: 3px solid black;
-  top: 10%;
-  left: 50%;
-  width: 200px;
-  height: 60px;
-}
-.columns {
-  clear:both;
-}
-.fileSelector {
-  position: absolute;
-  top: 18%;
-  left: 50%;
-  width: 200px;
-  height: 60px;
+.uploadButton = {
+  margin: 15px;
+  width: 220px;
 }
 
-ol {
-  position: absolute;
-  top: 30%;
-  left: 40%;
-  width: 300px;
-  height: 60px;
+.buttonspaper {
+  position: absplute;
+  border: 0.1em black solid;
+  top: 0px;
+  margin: 7px 5px;
+  height: 100px;
+  width: 99%;
 }
 
-ol li {
-  background-color: #f1f1f1;
-  padding: 5px;
-  color: black;
-  margin-left: 35px;
+.filespaper {
+  position: relative;
+  border: 0.1em black solid;
+  top: 0px;
+  margin: 5px;
+  width: 99%;
 }

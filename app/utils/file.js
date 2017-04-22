@@ -245,13 +245,17 @@ function removeFileMapEntry(fileID, callback) {
   });
 }
 
+// CHANGED: add upload time to filemap entries
 function shredFile(filename, filepath, key, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
+    const fileSize = loadedBuffer.length;
     compress(loadedBuffer, (compressedBuffer) => {
       encrypt(compressedBuffer, key, (encryptedBuffer) => {
         erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
           var shredIDs = [];
-
+          const uploadTime = new Date().toISOString().
+                                replace(/T/, ' ').
+                                replace(/\..+/, '');
           const saveShreds = (index, limit) => {
             /* const newShredID = */ generateShredID((newShredID)=>{
               shredIDs.push(newShredID);
@@ -267,6 +271,8 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
                     const fileMapEntry = {
                       name: filename,
                       shreds: shredIDs,
+                      uploadTime: uploadTime,
+                      size: fileSize,
                       key: key,
                       salt: crypto.randomBytes(256),
                       parity: parity,

@@ -10,76 +10,66 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
-import {readFilesNames, fileMapPath, key, NShreds, parity} from '../utils/state';
+import {readFilesInfo, fileMapPath, key, NShreds, parity} from '../utils/state';
 import {shredFile} from '../utils/file';
 
-const leftpaper = {
-  position: 'relative',
-  float: 'right',
-  height: 600,
-  width: 700,
-  margin: 20,
-  textAlign: 'right',
-  display: 'inline-block',
-};
-
-const rightpaper = {
-  position: 'relative',
-  float: 'right',
-  height: 600,
-  width: 250,
-  margin: 20,
-  textAlign: 'right',
-  display: 'inline-block',
-};
-
 const uploadButton = {
-  margin: 15,
+  position: 'relative',
+  left: 70,
+  top: 30,
   width: 220,
-  display: 'inline-block',
-  float: 'center',
+  border: 'black',
 };
 
 class LynksVault extends Component {
   constructor() {
     super();
     this.state = {
-      files: readFilesNames()
+      files: readFilesInfo()
     };
   }
   handleChange = (e, results) => {
-    const files = this.state.files.slice();
     console.log(results);
     results.forEach(result => {
       const [e, file] = result;
-      files.push(file.name);
       shredFile(file.name,file.path,key,NShreds,parity, (shredIDs) => {
         console.log(shredIDs);
       })
     });
-    this.setState({ files: files });
+    this.setState({ files: readFilesInfo() });
   }
   render() {
     const files = this.state.files;
     console.log(this.state.files);
-    const filesElem = files.map((fileName) => {
+    const filesElem = files.map((file) => {
       return (
         <TableRow>
           <TableRowColumn>File ID</TableRowColumn>
-          <TableRowColumn>{fileName}</TableRowColumn>
+          <TableRowColumn>{file.name}</TableRowColumn>
+          <TableRowColumn>{file.size}</TableRowColumn>
+          <TableRowColumn>{file.uploadTime}</TableRowColumn>
           <TableRowColumn>Uploaded</TableRowColumn>
+          <TableRowColumn>Download - Delete</TableRowColumn>
         </TableRow>
       )
     });
     return (
       <div>
-        <Paper style={leftpaper} zDepth={1}>
+        <Paper className={styles.buttonspaper} zDepth={1}>
+          <FileReaderInput id="my-file-input" onChange={this.handleChange}>
+              <RaisedButton label="Upload File" style={uploadButton} primary={true}  />
+          </FileReaderInput>
+        </Paper>
+        <Paper className={styles.filespaper} zDepth={1}>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHeaderColumn>ID</TableHeaderColumn>
                 <TableHeaderColumn>Name</TableHeaderColumn>
+                <TableHeaderColumn>Size</TableHeaderColumn>
+                <TableHeaderColumn>Upload date</TableHeaderColumn>
                 <TableHeaderColumn>Status</TableHeaderColumn>
+                <TableHeaderColumn>Actions</TableHeaderColumn>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -87,25 +77,6 @@ class LynksVault extends Component {
             </TableBody>
           </Table>
         </Paper>
-        <Paper style={rightpaper} zDepth={1}>
-          <FileReaderInput id="my-file-input" onChange={this.handleChange}>
-            <RaisedButton label="Upload File" primary={true} style={uploadButton} />
-          </FileReaderInput>
-        </Paper>
-
-        {/* <div className={styles.fileSelector}>
-          <FileReaderInput id="my-file-input" onChange={this.handleChange}>
-            <button type="button" className="btn btn-default btn-lg">
-              <span className="glyphicon glyphicon-plus" aria-hidden="false" />
-              {' Upload New Files'}
-            </button>
-          </FileReaderInput>
-        </div>
-        <div>
-          <ol className={styles.listFiles}>
-            {filesElem}
-          </ol>
-        </div> */}
       </div>
     );
   }

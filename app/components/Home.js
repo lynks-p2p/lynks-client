@@ -9,6 +9,7 @@ import {Card, CardActions, CardHeader, CardMedia, CardTitle, CardText} from 'mat
 import Upload from 'material-ui/svg-icons/file/file-upload';
 import Drive from 'material-ui/svg-icons/editor/insert-drive-file';
 import Share from 'material-ui/svg-icons/social/share';
+import styles from './Home.css';
 
 export default class Home extends Component {
   constructor() {
@@ -20,7 +21,7 @@ export default class Home extends Component {
   render() {
     return (
       <div>
-        <Drawer open={true}>
+        <Drawer className={styles.bar} open={true}>
           <Card>
              <CardHeader
                title="User 106"
@@ -46,7 +47,7 @@ export default class Home extends Component {
           onTouchTap={()=>{this.setState({tab: 3});}}
           />
         </Drawer>
-        <div>
+        <div className={styles.app}>
           {this.state.tab == 1 ? <LynksVault /> : <LynksDrive />}
         </div>
       </div>
