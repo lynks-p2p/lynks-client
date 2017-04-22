@@ -1,0 +1,5 @@
+2017/04/22-23:34:50.681 17ec Recovering log #149
+2017/04/22-23:34:50.681 17ec Level-0 table #151: started
+2017/04/22-23:34:50.770 17ec Level-0 table #151: 3624 bytes OK
+2017/04/22-23:34:50.985 17ec Delete type=0 #149
+2017/04/22-23:34:50.985 17ec Delete type=3 #148

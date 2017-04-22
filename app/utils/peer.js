@@ -25,7 +25,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    storage: levelup('./DHT_Storage/'),
+    storage: levelup('./DHT_Storage2/'),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });

@@ -11,6 +11,7 @@ const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
   { hostname: '192.168.167.1', port: 2346 } //10.7.57.202
 ];
+console.log(require('buffer').kMaxLength);
 signup(userID, pin, () => {
   console.log('finish signup');
   initHost(myport, networkID, seed, () => {

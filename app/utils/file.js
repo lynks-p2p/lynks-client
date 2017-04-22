@@ -5,7 +5,6 @@ import ObjectID from 'bson-objectid';
 import path from 'path';
 import async from 'async';
 import fs from 'fs';
-
 import { storeShredRequest, getShredRequest, generateShredID, saveHost, retrieveHosts } from './shred';
 import { node } from './peer';
 import { getMasterKey } from './auth'
@@ -242,10 +241,10 @@ function removeFileMapEntry(fileID, callback) {
     if (fileMap[fileID]) {
       fileMap[fileID] = undefined;
       storeFileMap(fileMap, () => {
-        return callback(0);
+        return callback(null);
       });
     }
-    else return callback(1);
+    else return callback('Entry does not exist');
   });
 }
 
@@ -264,7 +263,13 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
         generateFileKey(getMasterKey(), fileID, (fileKey) => {
           console.log('file key generated!');
           encrypt(compressedBuffer, fileKey, (encryptedBuffer) => {
+            if (!encryptedBuffer){
+              return callback(null);
+            }
             erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
+              if ((!shreds)||(!shardLength)){
+                return callback(null);
+              }
               var shredIDs = [];
               const saveShreds = (index, limit) => {
                 generateShredID((newShredID)=>{
@@ -289,7 +294,7 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
                         }
                         //const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
                         addFileMapEntry(fileID, fileMapEntry, () => {
-                          return callback(fileID, shredIDs);
+                          return callback(fileMapEntry, shredIDs);
                           });
                         });
                       }
@@ -315,7 +320,8 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   readFileMap((fileMap) => {
     const file = fileMap[fileID];
     if (!file) {
-      return callback('file does not exist');
+      console.log('file ID not in file map');
+      return callback('file ID not in file map');
     }
     const { key, deadbytes, NShreds, parity, shardLength } = file;
     var failedShreds = 0;
@@ -356,14 +362,18 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
       }
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
-        if (!fileMap[fileID]) {
-          console.log('file ID not in file map');
-          return callback('file ID not in file map');
-        }
         erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
-
+          if (!loadedBuffer){
+            return callback('Failed to erasure decode');
+          }
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
+          if (!loadedBuffer2){
+            return callback('Error when removing deadbytes');
+          }
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
+            if (!decryptedBuffer){
+              return callback('Error decrypting buffer');
+            }
             decompress(decryptedBuffer, (decompressedBuffer) => {
               if (!decompressedBuffer){
                 return callback('failed to decompress');
@@ -373,7 +383,7 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
                 for (const index in shredIDs) {
                   const filepath = shredsPath + shredIDs[index];
                   if ((shredIDs[index]) && (fs.existsSync(filepath))) {
-                    fs.unlink(shredsPath + shredIDs[index], () => {});
+                    fs.unlink(filepath, () => {});
                   }
                 }
                 return callback(null);
@@ -420,54 +430,75 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   const fileDirectory = path.dirname(filepath);
 
 
-  shredFile(fileName, filepath, NShreds, parity, (fileID, shredIDs) => {
-    if ((!shredIDs) || (!fileID)) {
+  shredFile(fileName, filepath, NShreds, parity, (file, shredIDs) => {
+    if ((!shredIDs)||(!file)) {
       console.log('error shredding file');
       return callback('error shredding file');
     }
     console.log ('Done shredding');
-    async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
-
-
-        //TODO: we need to try n times before aborting, here it aborts from single failure
-        storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
-          if(err) { console.error(err); return asyncCallback();}
-          asyncCallback();
-        });
-
-    }, (err) => { // after all shreds are uploaded or error was raised
-
-      if(err) { console.error('error in Uploading shreds to Peers !'); return callback(err); }
-      console.log('Done Sending Shreds');
-
-
-      for (var index in shredIDs) { // remove  shreds , async
-        const filepath = pre_send_path + shredIDs[index];
-        if(fs.existsSync(filepath)){
-          fs.unlink(filepath, () => {});
-          }
-        }
-
-          async.eachOf(shredIDs, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
-
-            // BUG: given a wrong id, empty, it contiues without error
-            saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
-
-              if(err)  {  console.error('error in Uploading shred'+ val +'  to DHT !'); return asyncCallback_(err); }
-              console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
-
-              asyncCallback_();
-            });
-
-          }, (err) => { // after all shred-host pairs are uploaded on DHT
-
-            if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
-            console.log('done Uploading shreds to DHT');
-
-            callback(null);
+    const maxTotalBuffer = 400000000;  //to be safe
+    const { shardLength } = file;
+    var shredsSent=0;   //number of shreds sent successfully
+    var start=0;  // index of shred ID to start with
+    var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
+    const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), shredIDs.length);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
+    console.log('shreds at a time: ' + shredsAtATime);
+    var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
+    async.doWhilst( (whilst_callback) => {
+      var shredsToBeSent = [];
+      for (var i = start; i < Math.min(start + shredsAtATime, shredIDs.length); i++){
+        shredsToBeSent.push(shredIDs[i]);
+      }
+      console.log('shreds to be sent: ');
+      console.log(shredsToBeSent);
+      async.eachOf(shredsToBeSent, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
+          //TODO: we need to try n times before aborting, here it aborts from single failure
+          shredsAttempted++;
+          if (hosts[index]['ip']){
+          storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
+            if(err) { console.error(err); return asyncCallback();}
+            shredsDelivered.push(shredsToBeSent[index]);
+            shredsSent++;
+            return asyncCallback();
           });
+        }
+      }, (err) => { // after all shreds are uploaded or error was raised
+
+        if(err) {console.error('error in Uploading shreds to Peers !'); return callback(err);}
+        if(shredsSent != shredIDs.length) console.log('searching for other '+(shredIDs.length-shredsSent));
+        console.log('Done Sending Shreds');
+        start += shredsAtATime;
+        console.log(shredsSent < shredIDs.length);
+        console.log(shredsAttempted < shredIDs.length);
+        whilst_callback();
         });
-    });
+      },
+        ()=> { return ((shredsSent < shredIDs.length) && (shredsAttempted < shredIDs.length));}, // test function
+        (err,)=> {
+          for (var index in shredsDelivered) { // remove  shreds , async
+            const filepath = pre_send_path + shredIDs[index];
+            if(fs.existsSync(filepath)){
+              fs.unlink(filepath, () => {});
+              }
+            }
+            async.eachOf(shredsDelivered, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
+              // BUG: given a wrong id, empty, it contiues without error
+              saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
+                if(err)  {  console.error('error in Uploading shred'+ val +'  to DHT !'); return asyncCallback_(err); }
+                console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
+                asyncCallback_();
+              });
+            }, (err) => { // after all shred-host pairs are uploaded on DHT
+              if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+              console.log('done Uploading shreds to DHT');
+              if (shredsSent < shredIDs.length){
+                console.log('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
+                return callback('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
+              }
+              return callback(null);
+            });
+        });
+  });
 }
 
 function download(FileID,callback){  //to upload a file in Lynks
