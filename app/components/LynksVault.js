@@ -1,6 +1,5 @@
 // @flow
 /* eslint-disable */
-import { Button } from 'react-bootstrap';
 import React, { Component } from 'react';
 import FileReaderInput from 'react-file-reader-input';
 import { Line } from 'rc-progress';
@@ -12,6 +11,9 @@ import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
 import {readFilesInfo, fileMapPath, key, NShreds, parity} from '../utils/state';
 import {shredFile} from '../utils/file';
+import FileFileDownload from 'material-ui/svg-icons/file/file-download';
+import ActionDeleteForever from 'material-ui/svg-icons/action/delete-forever';
+import {red800, green500} from 'material-ui/styles/colors';
 
 const uploadButton = {
   position: 'relative',
@@ -19,6 +21,9 @@ const uploadButton = {
   top: 30,
   width: 220,
   border: 'black',
+};
+const iconStyles = {
+  marginRight: 20,
 };
 
 class LynksVault extends Component {
@@ -29,14 +34,24 @@ class LynksVault extends Component {
     };
   }
   handleChange = (e, results) => {
+    const files = this.state.files.slice();
     console.log(results);
+    const uploadTime = new Date().toISOString().
+                          substring(0,16).
+                          replace(/T/, ' ').
+                          replace(/\..+/, '');
     results.forEach(result => {
       const [e, file] = result;
+      files.push({
+        name: file.name,
+        uploadTime: uploadTime,
+        size: `${file.size/1000}KB`,
+      });
       shredFile(file.name,file.path,key,NShreds,parity, (shredIDs) => {
         console.log(shredIDs);
       })
     });
-    this.setState({ files: readFilesInfo() });
+    this.setState({ files: files });
   }
   render() {
     const files = this.state.files;
@@ -49,7 +64,10 @@ class LynksVault extends Component {
           <TableRowColumn>{file.size}</TableRowColumn>
           <TableRowColumn>{file.uploadTime}</TableRowColumn>
           <TableRowColumn>Uploaded</TableRowColumn>
-          <TableRowColumn>Download - Delete</TableRowColumn>
+          <TableRowColumn>
+              <FileFileDownload style={iconStyles} color={green500} />
+              <ActionDeleteForever  style={iconStyles} color={red800} />
+          </TableRowColumn>
         </TableRow>
       )
     });
@@ -61,7 +79,9 @@ class LynksVault extends Component {
           </FileReaderInput>
         </Paper>
         <Paper className={styles.filespaper} zDepth={1}>
-          <Table>
+          <Table
+            height='460px'
+          >
             <TableHeader>
               <TableRow>
                 <TableHeaderColumn>ID</TableHeaderColumn>

@@ -254,6 +254,7 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
         erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
           var shredIDs = [];
           const uploadTime = new Date().toISOString().
+                                substring(0,16).
                                 replace(/T/, ' ').
                                 replace(/\..+/, '');
           const saveShreds = (index, limit) => {
