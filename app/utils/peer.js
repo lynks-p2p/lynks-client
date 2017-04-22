@@ -1,11 +1,3 @@
-
-// const send_shred_request = require ('../../communication/client.js').send_shred_request;
-// const send_store_request = require ('../../communication/client.js').send_store_request;
-// const shredFile = require ('./file.js').shredFile;
-// const readFileMap = require ('./file.js').readFileMap;
-// const reconstructFile = require ('./file.js').reconstructFile;
-
-
 import socketio from 'socket.io';
 import socketclient from 'socket.io-client';
 import dl from 'delivery';
@@ -33,8 +25,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    //storage: levelup('./DHT_Storage/'),
-    storage: levelup('./DHT_Storage2/'),
+    storage: levelup('./DHT_Storage/'),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });

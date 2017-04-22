@@ -8,45 +8,37 @@ import fs from 'fs';
 
 import { storeShredRequest, getShredRequest, generateShredID, saveHost, retrieveHosts } from './shred';
 import { node } from './peer';
-
+import { getMasterKey } from './auth'
 
 const fileMapPath = 'filemap.json';
 const pre_send_path = './pre_send/';
 const pre_store_path = './pre_store/';
 
 
-
 function generateFileID(callback) {  // TODO: WHERE this will be called ?
 
     var key = crypto.randomBytes(16).toString('hex');  // generate random file key (128 bits)
-
-    var fileMap = readFileMap();
-
-    // BUG: change this to be sync !
-    while(fileMap[key]!=undefined)  //  check if it's already in the filemap
-    {
-      var key = crypto.randomBytes(16).toString('hex');
-    }
-
+    readFileMap((fileMap) => {
+      while(fileMap[key] != undefined) { //  check if it's already in the filemap
+        var key = crypto.randomBytes(16).toString('hex');
+      }
+    });
     return callback(key);
   }
 
 function generateFileMapKey(userid, pin, callback) { // TODO: what is this ?
-
     // hash userid with pin
     var key = crypto.createHash('SHA256').update(userid).update(pin).digest('hex');
     return callback(key);
   }
 
 function generateMasterKey(FileMapKey, callback) {  // TODO: WHERE this will be called ?
-
   // salt the FileMapKey with a 32 bit string using hash
   var key = crypto.createHash('SHA256').update(FileMapKey).update(crypto.randomBytes(4).toString('hex')).digest('hex');
   return callback(key);
 }
 
 function generateFileKey(MasterKey, FileID, callback) { // TODO: WHERE this will be called ?
-
   // hash MasterKey with FileID
   var key = crypto.createHash('SHA256').update(MasterKey).update(FileID).digest('hex');
   return callback(key);
@@ -58,7 +50,6 @@ function getFileList() {
 
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
-    console.log('exists');
     fs.readFile(path, (err, data) => {
       if (err) return callback(0);
       return callback(data);
@@ -77,7 +68,7 @@ function bufferToFile(path, buffer, callback) {
 function compress(buffer, callback) {
   // compress file with zlib
   zlib.gzip(buffer, (err, data) => {
-    if (err) return console.log(err);
+    if (err) return console.log(null);
     return callback(data);
   });
 }
@@ -85,7 +76,7 @@ function compress(buffer, callback) {
 function decompress(buffer, callback) {
   // decompress file with zlib
   zlib.gunzip(buffer, (err, data) => {
-    if (err) return console.log(err);
+    if (err) return console.log(null);
 
     return callback(data);
   });
@@ -254,57 +245,62 @@ function removeFileMapEntry(fileID, callback) {
         return callback(0);
       });
     }
-    return callback(1);
+    else return callback(1);
   });
 }
 
-function shredFile(filename, filepath, key, NShreds, parity, callback) {
+function shredFile(filename, filepath, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
-      console.log(loadedBuffer);
       return callback(null);
     }
     compress(loadedBuffer, (compressedBuffer) => {
-      encrypt(compressedBuffer, key, (encryptedBuffer) => {
-        erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
-          var shredIDs = [];
-
-          const saveShreds = (index, limit) => {
-            /* const newShredID = */ generateShredID((newShredID)=>{
-              shredIDs.push(newShredID);
-
-              bufferToFile(`${pre_send_path}/${newShredID}`, shreds[index], () => {
-                if (index < limit - 1) {
-                  saveShreds(index + 1, limit);
-                }
-                else {
-                  readFileMap((fileMap) => {
-                    const fileMapSize = Object.keys(fileMap).length;
-                    const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
-                    const fileMapEntry = {
-                      name: filename,
-                      shreds: shredIDs,
-                      key: key,
-                      salt: crypto.randomBytes(256),
-                      parity: parity,
-                      NShreds: NShreds,
-                      shardLength: shardLength,
-                      deadbytes: deadbytes
+      if (!compressedBuffer){
+        return callback(null);
+      }
+      generateFileID((fileID)=>{
+        console.log('file ID generated! ' + fileID);
+        generateFileKey(getMasterKey(), fileID, (fileKey) => {
+          console.log('file key generated!');
+          encrypt(compressedBuffer, fileKey, (encryptedBuffer) => {
+            erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
+              var shredIDs = [];
+              const saveShreds = (index, limit) => {
+                generateShredID((newShredID)=>{
+                  shredIDs.push(newShredID);
+                  bufferToFile(`${pre_send_path}/${newShredID}`, shreds[index], () => {
+                    if (index < limit - 1) {
+                      saveShreds(index + 1, limit);
                     }
-                    const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
-                    addFileMapEntry(lastFileID == '' ? 1 : parseInt(lastFileID) + 1, fileMapEntry, () => {
-                      callback(shredIDs);
+                    else {
+                      readFileMap((fileMap) => {
+                        const fileMapSize = Object.keys(fileMap).length;
+                        const deadbytes = shreds[0].length * NShreds - encryptedBuffer.length;
+                        const fileMapEntry = {
+                          name: filename,
+                          shreds: shredIDs,
+                          key: fileKey,
+                          salt: crypto.randomBytes(256),
+                          parity: parity,
+                          NShreds: NShreds,
+                          shardLength: shardLength,
+                          deadbytes: deadbytes
+                        }
+                        //const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
+                        addFileMapEntry(fileID, fileMapEntry, () => {
+                          return callback(fileID, shredIDs);
+                          });
+                        });
+                      }
                     });
                   });
                 }
+                const limit = shreds.length;
+                saveShreds(0, limit);
               });
             });
-
-          };
-          const limit = shreds.length;
-          saveShreds(0, limit);
-        });
+          });
       });
     });
   });
@@ -336,10 +332,9 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
           } else {
             failedShreds++;
           }
-          buffer = Buffer.concat([buffer, data]);
           if (index < limit - 1) readShreds(index + 1, limit, callback2);
           else {
-            callback2(failedShreds);
+            return callback2(failedShreds);
           }
         });
       } else {
@@ -347,22 +342,22 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
         buffer = Buffer.concat([buffer, emptyBuffer]);
         if (index < limit - 1) readShreds(index + 1, limit, callback2);
         else {
-          callback2(failedShreds);
+          return callback2(failedShreds);
         }
       }
     };
 
     const limit = shredIDs.length;
 
-    readShreds(0, limit, (missedShreds) => {
-      if (missedShreds){
-        console.log('some shreds are missing');
-        return callback('missedShreds');
+    readShreds(0, limit, (failedShreds) => {
+      if (failedShreds){
+        console.log('some shreds are corrupted');
+        return callback('some shreds are corrupted');
       }
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
         if (!fileMap[fileID]) {
-          console.log('error!!!');
+          console.log('file ID not in file map');
           return callback('file ID not in file map');
         }
         erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
@@ -370,6 +365,9 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
+              if (!decompressedBuffer){
+                return callback('failed to decompress');
+              }
               bufferToFile('./Downloads/' + filename, decompressedBuffer, () => {
                 console.log('Success!');
                 for (const index in shredIDs) {
@@ -409,7 +407,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   //   hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('cxc').toString('hex') })
   // }
 
-  const key = 'FOOxxBAR';
+  //const key = 'FOOxxBAR';
 
   //  --------------------fixed,need to change-------------------
 
@@ -422,10 +420,10 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   const fileDirectory = path.dirname(filepath);
 
 
-  shredFile(fileName, filepath, key, NShreds, parity, (shredIDs) => {
-    if (!shredIDs) {
-      console.log('file does not exist');
-      return callback('file does not exist');
+  shredFile(fileName, filepath, NShreds, parity, (fileID, shredIDs) => {
+    if ((!shredIDs) || (!fileID)) {
+      console.log('error shredding file');
+      return callback('error shredding file');
     }
     console.log ('Done shredding');
     async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
@@ -481,7 +479,6 @@ function download(FileID,callback){  //to upload a file in Lynks
     if(file) {
 
       const { shreds: shredIDs, key, salt, deadbytes, NShreds, parity } = file;
-
       console.log('searching for the peerID of each shredID');
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
           retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
@@ -560,7 +557,7 @@ function download(FileID,callback){  //to upload a file in Lynks
                   //  using asyc lib to ensure this flow of loops
                 async.eachOfSeries(shredIDs,(originalShred, index, eachOfSeries_callback_)=>{ // 1st loop to create the binary string
                   var exists;
-                  if (receivedShredIDs.indexOf(originalShred) > -1) exists=index;
+                  if (receivedShredIDs.indexOf(originalShred) > -1) exists = index;
                   else exists=0;
                   requiredShreds.push(exists);
                   eachOfSeries_callback_();
@@ -575,13 +572,13 @@ function download(FileID,callback){  //to upload a file in Lynks
 
                           // console.log('targets: ' + targets.toString(2));
                           console.log('Reconstructing File ...');
-                          reconstructFile(FileID, targets, shredIDs, pre_store_path, (missedShreds) => {
-                            if (!missedShreds){
+                          reconstructFile(FileID, targets, shredIDs, pre_store_path, (err) => {
+                            if (!err){
                                 console.log('File Reconstructed');
                                 return callback(null);
                                 } else {
-                                  console.log('File reconstruction failed due to ' + missedShreds + 'missing shreds');
-                                  return callback('reconstruction failed due to ' + missedShreds + 'missing shreds');
+                                  console.log('File reconstruction failed, error: ' + err);
+                                  return callback(err);
                                   }
                               });
                         });
