@@ -547,20 +547,24 @@ function download(FileID,callback){  //to upload a file in Lynks
 
         var receivedCount = 0; // # of recieved Shreds
         const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
-
-        async.doWhilst(
-          (whilst_callback)=>{ // try recieve the remanning shreds
-
-
+        const maxTotalBuffer = 400000000;  //to be safe
+        const { shardLength } = file;
+        var shredsSent=0;   //number of shreds sent successfully
+        var start=0;  // index of shred ID to start with
+        var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
+        const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), NShreds);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
+        console.log('shreds at a time: ' + shredsAtATime);
+        var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
+        async.doWhilst((whilst_callback) => { // try recieve the remanning shreds
             const shredPeerInfo_min = [];
             if(shredPeerInfo.length < (NShreds-receivedCount) ) { return whilst_callback('error, NOT Enough Shreds avaliable !');}
-            for(var i=0; i<NShreds-receivedCount;i++)
+            for(var i=0;i <  Math.min(NShreds-receivedCount, shredsAtATime);i++)
             {
               shredPeerInfo_min.push(shredPeerInfo.pop());
             }
-
             async.eachOf(shredPeerInfo_min, (request, index, eachOf_callback) =>{ //  loop to retrieving shreds in parallel.
                         getShredRequest(request.ip, request.port, request.shred, pre_store_path, (err)=> { // retrieving a single shred
+                            shredsAttempted++;
                             if(err) { console.error(err); return eachOf_callback(); }
                             receivedCount++;
                             console.log(receivedCount+'/'+NShreds);
@@ -569,12 +573,11 @@ function download(FileID,callback){  //to upload a file in Lynks
                           });
 
                         },(err, n)=> { // file transmition finished
-
                             if(receivedCount!=NShreds) console.log('searching for other '+(NShreds-receivedCount)  );
                             whilst_callback();
                         });
           },
-            ()=> { return receivedCount < NShreds ; }, // test function
+            ()=> { return ((receivedCount < NShreds)&&(shredsAttempted<NShreds)) ; }, // test function
             (err,)=> { // reconstruct File, after recieving the min. shreds
 
                 if(err)  {  console.log('Aborting, could not recieve the min. #shreds'); return callback(err); }
