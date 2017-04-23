@@ -15,6 +15,7 @@ import kad from 'kad';
 import ip from 'ip';
 import ping from 'ping';
 import isOnline from 'is-online';
+import async from 'async'
 import {  bufferToFile } from './file'
 import { sendShredHandler, getShredHandler } from './shred';
 
@@ -281,16 +282,45 @@ function calculateHostScore(ip, hostactivity, callback, score) {            // t
           //console.log(score);
           getPeerLatency(ip, (latency)=>{
               //console.log(score);
-              console.log(match);
-              console.log(availability);
+              //console.log(match);
+              //console.log(availability);
               console.log(latency['avg']);                  //maximum acceptable latency = 500mss
 
-              var totalscore = (0.45*match/1008) + (0.35*availability/1008) + (0.2*(0.5-latency['avg'])/0.5);
-
+              var totalscore = (0.45*match/1008) + (0.35*availability/1008) + (0.2*(500-latency['avg'])/500);
 
               callback(totalscore);
           });
       });
+    });
+}
+
+
+
+
+function sortHosts(hosts, callback) {
+
+    var asyncTasks = [];
+
+    hosts.forEach(function(host){
+        //var activity = host['activity'].toString().split(',');
+        asyncTasks.push(function(callback){
+            calculateHostScore(host['ip'], host['activity'], (score)=>{
+                console.log(score);
+                host['score']=score;
+                callback();
+            });
+
+        });
+    });
+
+    async.parallel(asyncTasks, function(){
+        // console.log('All is done.');
+        // sorting should be done here
+
+        hosts.sort(function(a, b) {
+            return b['score'] - a['score'];
+        });
+        callback(hosts);
     });
 }
 
@@ -347,4 +377,4 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
   });
 }
 
-export { node, getPeers, initHost,initDHT, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost,initDHT, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts, shred_and_send, receive_and_gather };
