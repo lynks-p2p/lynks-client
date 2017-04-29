@@ -34,3 +34,5 @@ function generateFileKey(MasterKey, FileID, callback) { // TODO: WHERE this will
   var key = crypto.createHash('SHA256').update(MasterKey).update(FileID).digest('hex');
   return callback(key);
 }
+
+export {generateFileID, generateFileKey, generateFileMapKey, generateMasterKey}
