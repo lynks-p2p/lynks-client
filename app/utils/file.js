@@ -5,7 +5,10 @@ import ObjectID from 'bson-objectid';
 import path from 'path';
 import async from 'async';
 import fs from 'fs';
-import { storeShredRequest, getShredRequest, generateShredID, saveHost, retrieveHosts } from './shred';
+
+import { storeShredRequest, getShredRequest, saveHost, retrieveHosts } from './shred';
+import { generateShredID } from './keys_ids';
+
 import { node } from './peer';
 import { getMasterKey } from './auth'
 
