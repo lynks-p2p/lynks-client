@@ -7,7 +7,7 @@ import async from 'async';
 import fs from 'fs';
 
 import { storeShredRequest, getShredRequest, saveHost, retrieveHosts } from './shred';
-import { generateShredID } from './keys_ids';
+import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
 
 import { node } from './peer';
 import { getMasterKey } from './auth'
@@ -221,7 +221,7 @@ function removeFileMapEntry(fileID, callback) {
   });
 }
 
-function shredFile(filename, filepath, key, NShreds, parity, callback) {
+function shredFile(filename, filepath, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
@@ -229,9 +229,9 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
     }
     compress(loadedBuffer, (compressedBuffer) => {
       generateFileID((fileID)=>{
-        console.log('file ID generated! ' + fileID);
+        console.log('\tfile ID generated!\t' + fileID);
         generateFileKey(getMasterKey(), fileID, (fileKey) => {
-          console.log('file key generated!');
+          console.log('\tfile key generated!\t'+fileKey);
           encrypt(compressedBuffer, fileKey, (encryptedBuffer) => {
             erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
               var shredIDs = [];
@@ -348,21 +348,19 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
     //  --------------------fixed,need to change-------------------
 
-  const peerIP='192.168.1.21'
+  const peerIP='10.40.116.75'
   const hosts = []
-  for (let f = 0; f < 15; f++)
+  for (let f = 0; f < 30; f++)
   {
     //10.7.57.202
     hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
   }
 
-  for (let f = 0; f < 15; f++)
-  {
-    //10.7.57.202
-    hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('cxc').toString('hex') })
-  }
-
-  //const key = 'FOOxxBAR';
+  // for (let f = 0; f < 15; f++)
+  // {
+  //   //10.7.57.202
+  //   hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('cxc').toString('hex') })
+  // }
 
   //  --------------------fixed,need to change-------------------
 
@@ -373,7 +371,6 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
-
 
   shredFile(fileName, filepath, NShreds, parity, (file, shredIDs) => {
     if ((!shredIDs)||(!file)) {

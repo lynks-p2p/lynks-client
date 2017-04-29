@@ -6,7 +6,7 @@ import { readFileMap, createFileMap, addFileMapEntry } from './file';
 import kad from 'kad';
 
 
-function generateShredID() { // generateShredID
+function generateShredID(callback) { // generateShredID
 
    // const checkUniqueness = (key) => {
    //   retrieveHosts(key, (value) => {
@@ -23,9 +23,8 @@ function generateShredID() { // generateShredID
    // }
 
   //  checkUniqueness(kad.utils.getRandomKeyString());
-  return kad.utils.getRandomKeyString();
+  callback(kad.utils.getRandomKeyString());
 }
-
 
 function generateFileID(callback) {  // TODO: WHERE this will be called ?
 
@@ -44,7 +43,7 @@ function generateFileMapKey(userid, pin, callback) { // TODO: what is this ?
     return callback(key);
   }
 
-function generateMasterKey(FileMapKey, random, callback) {  // TODO: WHERE this will be called ?
+function generateMasterKey(FileMapKey, random, callback) {
   // salt the FileMapKey with a 32 bit string using hash
   var key = crypto.createHash('SHA256').update(FileMapKey).update(random).digest('hex');
   return callback(key);

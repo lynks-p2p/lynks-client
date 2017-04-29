@@ -1,54 +1,68 @@
-import { generateFileMapKey, generateMasterKey } from './file';
+import { readFileMap } from './file';
+import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 
 var masterKey, userID, pin;
 
-function login(userID, pin, callback) {
-  // login request
-  // check if userID and pin exist in the broker database here
+
+function signup(userID, callback) { // sign up request to get unique userID from broker
+
+  // do magic to check userID is unique with the server
+
   setUserID(userID);
-  setPin(pin);
-  generateFileMapKey(userID, pin, (fileMapKey) => {
-    console.log('file map key generated!');
-    generateMasterKey(fileMapKey, (mKey) => {
-      console.log('master key generated!');
-      setMasterKey (mKey);
-      console.log('authentication complete!');
-    });
-  });
-  return callback ();
+  console.log('Signup complete! Welcome '+userID);
+  return callback (userID);
 }
 
-function signup(userID, pin, callback) {
-  // sign up request
-  // make sure that userID is not taken with broker here
+function login(userID, pin, callback) { // login request
+
+  // magic here to check if userID and pin exist in the broker database here
+
+  //  user's inputs
   setUserID(userID);
   setPin(pin);
+
   generateFileMapKey(userID, pin, (fileMapKey) => {
-    console.log('file map key generated!');
-    generateMasterKey(fileMapKey, (mKey) => {
-      console.log('master key generated!');
-      setMasterKey (mKey);
-      console.log('authentication complete!');
+
+    console.log('\tfile map key generated!\t'+fileMapKey);
+    //decrypt the filemap
+    readFileMap( ()=>{
+
+      const random = Buffer.alloc(4); // fixed
+      generateMasterKey(fileMapKey, random, (mKey) => {
+
+        console.log('\tmaster key generated!\t'+mKey);
+        setMasterKey (mKey);
+
+        console.log('Authentication complete! Welcome back '+userID);
+        callback();
+
+      });
     });
   });
-  return callback ();
 }
-function getUserID () {
-  return userID;
-}
-function getPin () {
-  return pin;
-}
-function getMasterKey () {
-  return masterKey;
-}
-function setUserID (uID) {
+
+function setUserID (uID) { // Sets the userID
   userID = uID;
 }
-function setPin (uPin) {
+
+function setPin (uPin) { // Sets the user's pin
   return pin = uPin;
 }
-function setMasterKey (mKey) {
+
+function setMasterKey (mKey) { // Sets the MasterKey
   masterKey = mKey;
 }
+
+function getUserID () { // get the userID
+  return userID;
+}
+
+function getPin () { // gets the user's pincode supplied at login
+  return pin;
+}
+
+function getMasterKey () { // gets the MasterKey
+  return masterKey;
+}
+
 export { login, signup, getUserID, getPin, getMasterKey, setUserID, setPin, setMasterKey };

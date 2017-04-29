@@ -1,4 +1,4 @@
-import { initDHT , initFileDelivery } from '../app/utils/peer';
+import { node, initDHT , initFileDelivery } from '../app/utils/peer';
 import ip from 'ip';
 
 const myIP = ip.address();
