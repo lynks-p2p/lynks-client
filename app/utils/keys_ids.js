@@ -2,7 +2,7 @@ import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
 import ObjectID from 'bson-objectid';
-import { readFileMap, createFileMap, addFileMapEntry } from './app/utils/file';
+import { readFileMap, createFileMap, addFileMapEntry } from './file';
 
 
 
