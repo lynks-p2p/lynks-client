@@ -3,7 +3,28 @@ import crypto from 'crypto';
 import zlib from 'zlib';
 import ObjectID from 'bson-objectid';
 import { readFileMap, createFileMap, addFileMapEntry } from './file';
+import kad from 'kad';
 
+
+function generateShredID() { // generateShredID
+
+   // const checkUniqueness = (key) => {
+   //   retrieveHosts(key, (value) => {
+   //     if (value.length != undefined) {
+   //       // good key
+   //       cb(key);
+   //     }
+   //     else {
+   //       // key already exists
+   //       console.log('key already in use')
+   //       checkUniqueness(kad.utils.getRandomKeyString())
+   //     }
+   //   })
+   // }
+
+  //  checkUniqueness(kad.utils.getRandomKeyString());
+  return kad.utils.getRandomKeyString();
+}
 
 
 function generateFileID(callback) {  // TODO: WHERE this will be called ?
@@ -15,7 +36,7 @@ function generateFileID(callback) {  // TODO: WHERE this will be called ?
       }
     });
     return callback(key);
-  }
+}
 
 function generateFileMapKey(userid, pin, callback) { // TODO: what is this ?
     // hash userid with pin
@@ -35,4 +56,4 @@ function generateFileKey(MasterKey, FileID, callback) { // TODO: WHERE this will
   return callback(key);
 }
 
-export {generateFileID, generateFileKey, generateFileMapKey, generateMasterKey}
+export { generateShredID, generateFileID, generateFileKey, generateFileMapKey, generateMasterKey };

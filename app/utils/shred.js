@@ -5,26 +5,6 @@ import socketclient from 'socket.io-client';
 
 import { node } from './peer';
 
-function generateShredID(cb) { // generateShredID
-
-   const checkUniqueness = (key) => {
-     retrieveHosts(key, (value) => {
-       if (value.length != undefined) {
-         // good key
-         cb(key);
-       }
-       else {
-         // key already exists
-         console.log('key already in use')
-         checkUniqueness(kad.utils.getRandomKeyString())
-       }
-     })
-   }
-
-  //  checkUniqueness(kad.utils.getRandomKeyString());
-  cb (kad.utils.getRandomKeyString());
-}
-
 function saveHost(shredID,hostID,callback) { //  function to save the shred-host pair on the DHT
 
 
