@@ -66,7 +66,6 @@ function retrieveHosts(key, callback) { //  function to retrieve a shred-host pa
 function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for sending shreds
   const delivery = dl.listen(socket);
   delivery.connect();
-
   delivery.on('delivery.connect', (delivery) => {
     const filepath = shredsPath + shredID;
     if (fs.existsSync(filepath)) {
@@ -103,9 +102,9 @@ function getShredHandler(socket, shredID, shredsPath, callback) { // setup for r
     });
   });
 }
-
+var x=0;
 function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a shred TO  a Peer
-  // console.log('connecting to: '+ip+':'+port);
+
   const socket = socketclient(`http://${ip}:${port}`);
   socket.on('connect_error', function() {
       socket.disconnect();

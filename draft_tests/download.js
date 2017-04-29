@@ -7,7 +7,8 @@ const networkID = 'YEHIA_HESHAM_SAIDAUC';
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: '192.168.167.1', port: 2346 } //10.7.57.202
+
+  { hostname: '192.168.1.21', port: 2345 } //10.7.57.202
 ];
 
 initHost(myport, networkID, seed, () => {
@@ -21,6 +22,4 @@ readFileMap((fileMap)=>{
     else console.log('download Complete !');
     });
   });
-
-
 });

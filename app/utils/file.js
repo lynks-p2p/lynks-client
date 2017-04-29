@@ -14,35 +14,6 @@ const pre_send_path = './pre_send/';
 const pre_store_path = './pre_store/';
 
 
-function generateFileID(callback) {  // TODO: WHERE this will be called ?
-
-    var key = crypto.randomBytes(16).toString('hex');  // generate random file key (128 bits)
-    readFileMap((fileMap) => {
-      while(fileMap[key] != undefined) { //  check if it's already in the filemap
-        var key = crypto.randomBytes(16).toString('hex');
-      }
-    });
-    return callback(key);
-  }
-
-function generateFileMapKey(userid, pin, callback) { // TODO: what is this ?
-    // hash userid with pin
-    var key = crypto.createHash('SHA256').update(userid).update(pin).digest('hex');
-    return callback(key);
-  }
-
-function generateMasterKey(FileMapKey, callback) {  // TODO: WHERE this will be called ?
-  // salt the FileMapKey with a 32 bit string using hash
-  var key = crypto.createHash('SHA256').update(FileMapKey).update(crypto.randomBytes(4).toString('hex')).digest('hex');
-  return callback(key);
-}
-
-function generateFileKey(MasterKey, FileID, callback) { // TODO: WHERE this will be called ?
-  // hash MasterKey with FileID
-  var key = crypto.createHash('SHA256').update(MasterKey).update(FileID).digest('hex');
-  return callback(key);
-}
-
 function getFileList() {
   return 0;
 }
@@ -75,7 +46,7 @@ function compress(buffer, callback) {
 function decompress(buffer, callback) {
   // decompress file with zlib
   zlib.gunzip(buffer, (err, data) => {
-    if (err) return console.log(null);
+    if (err) return console.log(err);
 
     return callback(data);
   });
@@ -248,28 +219,19 @@ function removeFileMapEntry(fileID, callback) {
   });
 }
 
-function shredFile(filename, filepath, NShreds, parity, callback) {
+function shredFile(filename, filepath, key, NShreds, parity, callback) {
   fileToBuffer(filepath, (loadedBuffer) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
       return callback(null);
     }
     compress(loadedBuffer, (compressedBuffer) => {
-      if (!compressedBuffer){
-        return callback(null);
-      }
       generateFileID((fileID)=>{
         console.log('file ID generated! ' + fileID);
         generateFileKey(getMasterKey(), fileID, (fileKey) => {
           console.log('file key generated!');
           encrypt(compressedBuffer, fileKey, (encryptedBuffer) => {
-            if (!encryptedBuffer){
-              return callback(null);
-            }
             erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
-              if ((!shreds)||(!shardLength)){
-                return callback(null);
-              }
               var shredIDs = [];
               const saveShreds = (index, limit) => {
                 generateShredID((newShredID)=>{
@@ -312,6 +274,7 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
 }
 
 
+
 function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   let buffer = new Buffer([]);
 
@@ -324,60 +287,42 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
       return callback('file ID not in file map');
     }
     const { key, deadbytes, NShreds, parity, shardLength } = file;
-    var failedShreds = 0;
-    const readShreds = (index, limit, callback2) => {
-      const shredPresent = ~targets & (1 << index);
-      //
-      // console.log('index ' + index + ' -- ' + shredPresent);
 
+    const readShreds = (index, limit, callback2) => { // readshreds function
+
+      const shredPresent = ~targets & (1 << index);
       if (shredPresent) {
         // console.log('shred: ' + index);
         fileToBuffer(shredsPath + shredIDs[index], (data) => {
-          if (data) {
+	         if(!data) {return callback2('error!,'+ shredIDs[index]+' is corrupted !')	}
             buffer = Buffer.concat([buffer, data]);
-          } else {
-            failedShreds++;
-          }
           if (index < limit - 1) readShreds(index + 1, limit, callback2);
-          else {
-            return callback2(failedShreds);
-          }
+          else  { return callback2(null);  }
         });
       } else {
-        const emptyBuffer = Buffer.alloc(shardLength, 'b');
+        const emptyBuffer = Buffer.alloc(shardLength, '0');
         buffer = Buffer.concat([buffer, emptyBuffer]);
         if (index < limit - 1) readShreds(index + 1, limit, callback2);
         else {
-          return callback2(failedShreds);
+          return callback2(null);
         }
       }
     };
 
     const limit = shredIDs.length;
 
-    readShreds(0, limit, (failedShreds) => {
-      if (failedShreds){
-        console.log('some shreds are corrupted');
+    readShreds(0, limit, (err) => {
+      if (err){
+        console.error(err);
         return callback('some shreds are corrupted');
       }
       readFileMap((fileMap) => {
         const filename = fileMap[fileID]['name'];
         erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
-          if (!loadedBuffer){
-            return callback('Failed to erasure decode');
-          }
+
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
-          if (!loadedBuffer2){
-            return callback('Error when removing deadbytes');
-          }
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
-            if (!decryptedBuffer){
-              return callback('Error decrypting buffer');
-            }
             decompress(decryptedBuffer, (decompressedBuffer) => {
-              if (!decompressedBuffer){
-                return callback('failed to decompress');
-              }
               bufferToFile('./Downloads/' + filename, decompressedBuffer, () => {
                 console.log('Success!');
                 for (const index in shredIDs) {
@@ -396,6 +341,7 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
+
 function upload(filepath, callback) { //  to upload a file in Lynks
 
     // call peer.getPeers()
@@ -403,19 +349,19 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
     //  --------------------fixed,need to change-------------------
 
-  const peerIP='192.168.167.1'
+  const peerIP='192.168.1.21'
   const hosts = []
-  for (let f = 0; f < 30; f++)
+  for (let f = 0; f < 15; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+    hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
   }
 
-  // for (let f = 0; f < 15; f++)
-  // {
-  //   //10.7.57.202
-  //   hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('cxc').toString('hex') })
-  // }
+  for (let f = 0; f < 15; f++)
+  {
+    //10.7.57.202
+    hosts.push({ ip: peerIP, port: 2346, id: Buffer.from('cxc').toString('hex') })
+  }
 
   //const key = 'FOOxxBAR';
 
@@ -436,69 +382,112 @@ function upload(filepath, callback) { //  to upload a file in Lynks
       return callback('error shredding file');
     }
     console.log ('Done shredding');
-    const maxTotalBuffer = 400000000;  //to be safe
-    const { shardLength } = file;
-    var shredsSent=0;   //number of shreds sent successfully
-    var start=0;  // index of shred ID to start with
-    var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
-    const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), shredIDs.length);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
-    console.log('shreds at a time: ' + shredsAtATime);
-    var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
-    async.doWhilst( (whilst_callback) => {
-      var shredsToBeSent = [];
-      for (var i = start; i < Math.min(start + shredsAtATime, shredIDs.length); i++){
-        shredsToBeSent.push(shredIDs[i]);
-      }
-      console.log('shreds to be sent: ');
-      console.log(shredsToBeSent);
-      async.eachOf(shredsToBeSent, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
-          //TODO: we need to try n times before aborting, here it aborts from single failure
-          shredsAttempted++;
-          if (hosts[index]['ip']){
-          storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
-            if(err) { console.error(err); return asyncCallback();}
-            shredsDelivered.push(shredsToBeSent[index]);
-            shredsSent++;
-            return asyncCallback();
-          });
-        }
-      }, (err) => { // after all shreds are uploaded or error was raised
-
-        if(err) {console.error('error in Uploading shreds to Peers !'); return callback(err);}
-        if(shredsSent != shredIDs.length) console.log('searching for other '+(shredIDs.length-shredsSent));
-        console.log('Done Sending Shreds');
-        start += shredsAtATime;
-        console.log(shredsSent < shredIDs.length);
-        console.log(shredsAttempted < shredIDs.length);
-        whilst_callback();
-        });
-      },
-        ()=> { return ((shredsSent < shredIDs.length) && (shredsAttempted < shredIDs.length));}, // test function
-        (err,)=> {
-          for (var index in shredsDelivered) { // remove  shreds , async
-            const filepath = pre_send_path + shredIDs[index];
-            if(fs.existsSync(filepath)){
-              fs.unlink(filepath, () => {});
-              }
-            }
-            async.eachOf(shredsDelivered, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
-              // BUG: given a wrong id, empty, it contiues without error
-              saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
-                if(err)  {  console.error('error in Uploading shred'+ val +'  to DHT !'); return asyncCallback_(err); }
-                console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
-                asyncCallback_();
+    /*  This for the memory Leak error. 
+        const maxTotalBuffer = 400000000;  //to be safe
+        const { shardLength } = file;
+        var shredsSent=0;   //number of shreds sent successfully
+        var start=0;  // index of shred ID to start with
+        var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
+        const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), shredIDs.length);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
+        console.log('shreds at a time: ' + shredsAtATime);
+        var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
+        async.doWhilst( (whilst_callback) => {
+          var shredsToBeSent = [];
+          for (var i = start; i < Math.min(start + shredsAtATime, shredIDs.length); i++){
+            shredsToBeSent.push(shredIDs[i]);
+          }
+          console.log('shreds to be sent: ');
+          console.log(shredsToBeSent);
+          async.eachOf(shredsToBeSent, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
+              //TODO: we need to try n times before aborting, here it aborts from single failure
+              shredsAttempted++;
+              if (hosts[index]['ip']){
+              storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
+                if(err) { console.error(err); return asyncCallback();}
+                shredsDelivered.push(shredsToBeSent[index]);
+                shredsSent++;
+                return asyncCallback();
               });
-            }, (err) => { // after all shred-host pairs are uploaded on DHT
-              if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
-              console.log('done Uploading shreds to DHT');
-              if (shredsSent < shredIDs.length){
-                console.log('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
-                return callback('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
-              }
-              return callback(null);
+            }
+          }, (err) => { // after all shreds are uploaded or error was raised
+
+            if(err) {console.error('error in Uploading shreds to Peers !'); return callback(err);}
+            if(shredsSent != shredIDs.length) console.log('searching for other '+(shredIDs.length-shredsSent));
+            console.log('Done Sending Shreds');
+            start += shredsAtATime;
+            console.log(shredsSent < shredIDs.length);
+            console.log(shredsAttempted < shredIDs.length);
+            whilst_callback();
             });
+          },
+            ()=> { return ((shredsSent < shredIDs.length) && (shredsAttempted < shredIDs.length));}, // test function
+            (err,)=> {
+              for (var index in shredsDelivered) { // remove  shreds , async
+                const filepath = pre_send_path + shredIDs[index];
+                if(fs.existsSync(filepath)){
+                  fs.unlink(filepath, () => {});
+                  }
+                }
+                async.eachOf(shredsDelivered, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
+                  // BUG: given a wrong id, empty, it contiues without error
+                  saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
+                    if(err)  {  console.error('error in Uploading shred'+ val +'  to DHT !'); return asyncCallback_(err); }
+                    console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
+                    asyncCallback_();
+                  });
+                }, (err) => { // after all shred-host pairs are uploaded on DHT
+                  if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+                  console.log('done Uploading shreds to DHT');
+                  if (shredsSent < shredIDs.length){
+                    console.log('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
+                    return callback('not enough shreds were sent, required was: ' + shredIDs.length + ', sent was: ' + shredsSent);
+                  }
+                  return callback(null);
+                });
+            });
+      });
+    }
+    */
+
+
+
+async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
+        //TODO: we need to try n times before aborting, here it aborts from single failure
+        storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
+          if(err) { console.error(err); return asyncCallback();}
+          asyncCallback();
         });
-  });
+
+    }, (err) => { // after all shreds are uploaded or error was raised
+
+      if(err) { console.error('error in Uploading shreds to Peers !'); return callback(err); }
+      console.log('Done Sending Shreds');
+
+
+      for (var index in shredIDs) { // remove  shreds , async
+        fs.unlink(pre_send_path + shredIDs[index], () => {});
+          }
+
+          async.eachOf(shredIDs, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
+
+            // BUG: given a wrong id, empty, it contiues without error
+            saveHost(val, hosts[index]['id'], (err,numOfStored) =>{
+
+              if(err)  {  console.error('error in Uploading shred'+ val +'  to DHT !'); return asyncCallback_(err); }
+              console.log('Shred '+ val +', was stored on total nodes of ' + numOfStored);
+
+              asyncCallback_();
+            });
+
+          }, (err) => { // after all shred-host pairs are uploaded on DHT
+
+            if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+            console.log('done Uploading shreds to DHT');
+
+            callback(null);
+          });
+        });
+    });
 }
 
 function download(FileID,callback){  //to upload a file in Lynks
@@ -507,10 +496,12 @@ function download(FileID,callback){  //to upload a file in Lynks
 
   readFileMap((fileMap)=>{ //retrieve sherdIDs
     const file = fileMap[FileID];
-    if(file) {
+    if(file)
+    {
+      const { shreds: shredIDs, key, salt, deadbytes, NShreds, parity, shardLength } = file;
 
-      const { shreds: shredIDs, key, salt, deadbytes, NShreds, parity } = file;
       console.log('searching for the peerID of each shredID');
+
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
           retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
 
@@ -547,24 +538,26 @@ function download(FileID,callback){  //to upload a file in Lynks
 
         var receivedCount = 0; // # of recieved Shreds
         const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
-        const maxTotalBuffer = 400000000;  //to be safe
-        const { shardLength } = file;
-        var shredsSent=0;   //number of shreds sent successfully
-        var start=0;  // index of shred ID to start with
-        var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
-        const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), NShreds);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
-        console.log('shreds at a time: ' + shredsAtATime);
-        var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
+        // const maxTotalBuffer = 400000000;  //to be safe
+        // var shredsSent=0;   //number of shreds sent successfully
+        // var start=0;  // index of shred ID to start with
+        // var shredsDelivered = [];  //Shreds IDs of shreds that were successfully delivered
+        // const shredsAtATime = Math.min(Math.floor(maxTotalBuffer/shardLength), NShreds);   //Maximum total number of shreds that can be sent asynchronously at a time (more than about 630000000 gives a memory leakage error)
+        // console.log('shreds at a time: ' + shredsAtATime);
+        // var shredsAttempted = 0;  //number of times a shred was being attempted to be sent
         async.doWhilst((whilst_callback) => { // try recieve the remanning shreds
+
             const shredPeerInfo_min = [];
             if(shredPeerInfo.length < (NShreds-receivedCount) ) { return whilst_callback('error, NOT Enough Shreds avaliable !');}
-            for(var i=0;i <  Math.min(NShreds-receivedCount, shredsAtATime);i++)
+	    //for(var i=0;i <  Math.min(NShreds-receivedCount, shredsAtATime);i++)
+            for(var i=0; i<NShreds-receivedCount;i++)
             {
               shredPeerInfo_min.push(shredPeerInfo.pop());
             }
+
             async.eachOf(shredPeerInfo_min, (request, index, eachOf_callback) =>{ //  loop to retrieving shreds in parallel.
                         getShredRequest(request.ip, request.port, request.shred, pre_store_path, (err)=> { // retrieving a single shred
-                            shredsAttempted++;
+                            //shredsAttempted++;
                             if(err) { console.error(err); return eachOf_callback(); }
                             receivedCount++;
                             console.log(receivedCount+'/'+NShreds);
@@ -573,11 +566,15 @@ function download(FileID,callback){  //to upload a file in Lynks
                           });
 
                         },(err, n)=> { // file transmition finished
+
                             if(receivedCount!=NShreds) console.log('searching for other '+(NShreds-receivedCount)  );
                             whilst_callback();
                         });
           },
-            ()=> { return ((receivedCount < NShreds)&&(shredsAttempted<NShreds)) ; }, // test function
+            ()=> { // test function
+		//return ((receivedCount < NShreds)&&(shredsAttempted<NShreds)) ;
+		 return receivedCount < NShreds ;
+		},
             (err,)=> { // reconstruct File, after recieving the min. shreds
 
                 if(err)  {  console.log('Aborting, could not recieve the min. #shreds'); return callback(err); }
@@ -623,17 +620,14 @@ function download(FileID,callback){  //to upload a file in Lynks
   });
 }
 
+
 export {
-  generateFileID,
-  generateFileMapKey,
-  generateMasterKey,
-  generateFileKey,
   fileToBuffer,
   bufferToFile,
   compress,
   decompress,
-  erasureCode,
-  erasureDecode,
+  shredFile,
+  recoverFile,
   encrypt,
   decrypt,
   getFileList,

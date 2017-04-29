@@ -100,18 +100,27 @@ function getPeers() {
   return 0;
 }
 
-function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
-  shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
-    console.log ('done shredding');
-    send_store_request(public_ip, public_port, shredIDs, (path) => {
-      var fs = require ('fs');
-      const filepath = path + shredIDs[index];
-        if (fs.existsSync(filepath)) {
-          fs.unlink(path + shredIDs[index], () => {});
-        }
-    });
-  });
-}
+// function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
+//   shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
+//     console.log ('done shredding');
+//     send_store_request(public_ip, public_port, shredIDs, (path) => {
+//       var fs = require ('fs');
+// <<<<<<< Authentication
+//       const filepath = path + shredIDs[index];
+//         if (fs.existsSync(filepath)) {
+//           fs.unlink(path + shredIDs[index], () => {});
+//         }
+// =======
+//       for (var index in shredIDs) {
+//         const filepath = path + shredIDs[index];
+//         if (fs.existsSync(filepath)) {
+//           fs.unlink(path + shredIDs[index], () => {});
+//         }
+//       }
+// >>>>>>> develop
+//     });
+//   });
+// }
 
 function receive_and_gather(public_ip, public_port, fileID, callback) {
 
