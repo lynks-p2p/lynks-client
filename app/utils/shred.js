@@ -39,8 +39,8 @@ function saveHost(shredID,hostID,callback) { //  function to save the shred-host
 
 
   node.iterativeStore(shredID, hostID, (err, numOfStored) => {
-    if (err) return console.log(err);
-    callback(err,numOfStored);
+    if (err) {return callback(err,null);}
+    callback(null,numOfStored);
 
     });
 
@@ -53,8 +53,11 @@ function retrieveHosts(key, callback) { //  function to retrieve a shred-host pa
     //node:KadmeilaNode
     //key: buffer
   node.iterativeFindValue(key, (err, value, contacts) => {
-    if (err) return console.log(err);
-    callback (err,value, contacts)
+    if (err){
+      console.log(err);
+      return callback(err, null, null)
+    }
+    callback (null,value, contacts)
   }) ;
 
 
@@ -71,11 +74,11 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
         path: filepath
       })
     } else {
-      console.log('a shred no longer exists here\n');
+      console.log('\ta shred no longer exists here\n');
       socket.emit('shred_retrieve_fail');
     }
     delivery.on('send.success', () => {
-      console.log('A shred was sent successfully!');
+      console.log('\tA shred was sent successfully!');
       callback();
     });
   });
@@ -90,53 +93,53 @@ function getShredHandler(socket, shredID, shredsPath, callback) { // setup for r
     fs.writeFile(shredsPath + shred.name, shred.buffer, (err) => {
       socket.disconnect();
       if (err) {
-        console.log('shred could not be saved: ' + err);
-        return callback(err);
+        console.log('\tshred could not be saved: ' + err);
+        callback(err);
       } else {
-        console.log('shred ' + shred.name + ' saved');
-        return callback(0);
+        console.log('\tshred ' + shred.name + ' saved');
+        callback(null);
       }
     });
   });
 }
 var x=0;
 function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a shred TO  a Peer
-  console.log('connecting to: '+ip+':'+port);
+
   const socket = socketclient(`http://${ip}:${port}`);
   socket.on('connect_error', function() {
       socket.disconnect();
-      return callback(1);
+      return callback('\tcould not connect to '+ip+':'+port);
    });
   socket.emit('store_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      console.log('failed to retrieve a shred');
+      // console.log('\tfailed to retrieve a shred '+shredID);
       socket.disconnect();
-      return callback(2);
+      return callback('\tfailed to retrieve a shred '+shredID);
    });
   // steup for sending shreds
   sendShredHandler(socket, shredID, shredsPath, (err) => {
-    if (err) return console.log(err);
-    else return callback(0);
+    if (err) return callback(err);
+    else return callback(null);
   });
 }
 
 function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a shred FROM a Peer
   const socket = socketclient(`http://${ip}:${port}`);
   socket.on('connect_error', function() {
-      console.log('couldnt connect');
+      // console.log('\tcould not connect');
       socket.disconnect();
-      return callback(1);
+      return callback('\tcould not connect to '+ip+':'+port);
    });
   socket.emit('retrieve_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      console.log('failed to retrieve a shred');
+      // console.log('\tfailed to retrieve a shred '+shredID);
       socket.disconnect();
-      return callback(2);
+      return callback('\tfailed to retrieve a shred '+shredID);
    });
   // steup for recieving shreds
   getShredHandler(socket, shredID, shredsPath, (err) => {
-    if (err) return console.log(err);
-    else return callback(0);
+    if (err) return callback(err);
+    callback(null);
   });
 }
 

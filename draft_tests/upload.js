@@ -7,14 +7,14 @@ const networkID = 'YEHIA_HESHAM_SAIDAUC';
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: '192.168.1.8', port: 2346 } //10.7.57.202
+
+  { hostname: '192.168.1.21', port: 2345 } //10.7.57.202
 ];
 
 initHost(myport, networkID, seed, () => {
   console.log('identity is ' + node.router.identity.toString('hex'));
-  upload('./draft_tests/flash.jpg', (err)=>{
-    if (!err)
-      console.log('upload Complete !');
-    else console.log ('errrr');
+  upload('/home/yehia/Desktop/Kaskade & Project 46 - Last Chance.mp3', (err)=>{
+    if(err) console.log('upload Failed ! '+err);
+    else console.log('upload Complete !');
   });
 });
