@@ -12,16 +12,18 @@ const seed = [
 ];
 // console.log(require('buffer').kMaxLength);
 signup(user_ID, (userID) => {
-  login(userID, pin, ()=>{
+  login(userID, pin, (err)=>{
+    if(err){  return console.error(err);  }
+
     initHost(myport, userID, seed, () => {
 
       console.log('\tidentity is ' + node.router.identity.toString('hex'));
       console.log('initiating Download .......');
 
-      readFileMap((fileMap)=>{
+      readFileMap((fileMap,error)=>{
+        if(error) { return console.error(error);  }
         const fileMapSize = Object.keys(fileMap).length;
         const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
-        console.log(lastFileID);
         download(lastFileID, (err)=>{
           if(err) console.log('Download Failed ! '+err);
           else console.log('Download Complete ! ~~~ Check your Lynks Download Folder ~~~');

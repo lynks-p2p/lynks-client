@@ -1,7 +1,7 @@
-import { readFileMap } from './file';
+import { readFileMap,encryptFileMap,decryptFileMap, getFileMap } from './file';
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 
-var masterKey, userID, pin;
+var masterKey, userID, pin,fileMapKey;
 
 
 function signup(userID, callback) { // sign up request to get unique userID from broker
@@ -13,28 +13,26 @@ function signup(userID, callback) { // sign up request to get unique userID from
   return callback (userID);
 }
 
-function login(userID, pin, callback) { // login request
-
-  // magic here to check if userID and pin exist in the broker database here
+function login(userID, pin, callback) { // login request to get the fileMap from the broker
 
   //  user's inputs
   setUserID(userID);
   setPin(pin);
 
-  generateFileMapKey(userID, pin, (fileMapKey) => {
-
+  generateFileMapKey(userID, pin, (fileMapKey) => { //generate the fileMapKey
     console.log('\tfile map key generated!\t'+fileMapKey);
-    //decrypt the filemap
-    readFileMap( ()=>{
+    setFileMapKey(fileMapKey);
 
-      const random = Buffer.alloc(4); // fixed
-      generateMasterKey(fileMapKey, random, (mKey) => {
+    getFileMap((fileMap,error)=>{// generate the rest of keys using the remote fileMap
+      if(error) { return callback(error); }
+
+      generateMasterKey(fileMapKey, fileMap['rnd'], (mKey) => {
 
         console.log('\tmaster key generated!\t'+mKey);
-        setMasterKey (mKey);
-
         console.log('Authentication complete! Welcome back '+userID);
-        callback();
+
+        setMasterKey (mKey);
+        callback(null);
 
       });
     });
@@ -47,6 +45,10 @@ function setUserID (uID) { // Sets the userID
 
 function setPin (uPin) { // Sets the user's pin
   return pin = uPin;
+}
+
+function setFileMapKey (filemapKey) { // Sets the MasterKey
+  fileMapKey = filemapKey;
 }
 
 function setMasterKey (mKey) { // Sets the MasterKey
@@ -65,4 +67,8 @@ function getMasterKey () { // gets the MasterKey
   return masterKey;
 }
 
-export { login, signup, getUserID, getPin, getMasterKey, setUserID, setPin, setMasterKey };
+function getFileMapKey () { // gets the MasterKey
+  return fileMapKey;
+}
+
+export { login, signup, getUserID, getPin, getMasterKey,getFileMapKey, setUserID, setPin, setMasterKey };

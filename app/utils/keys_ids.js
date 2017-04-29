@@ -26,9 +26,9 @@ function generateShredID(callback) { // generateShredID
   callback(kad.utils.getRandomKeyString());
 }
 
-function generateFileID(callback) {  // TODO: WHERE this will be called ?
+function generateFileID(callback) {  // generate random file key (128 bits)
 
-    var key = crypto.randomBytes(16).toString('hex');  // generate random file key (128 bits)
+    var key = crypto.randomBytes(16).toString('hex');
     readFileMap((fileMap) => {
       while(fileMap[key] != undefined) { //  check if it's already in the filemap
         var key = crypto.randomBytes(16).toString('hex');
@@ -37,7 +37,7 @@ function generateFileID(callback) {  // TODO: WHERE this will be called ?
     return callback(key);
 }
 
-function generateFileMapKey(userid, pin, callback) { // TODO: what is this ?
+function generateFileMapKey(userid, pin, callback) {
     // hash userid with pin
     var key = crypto.createHash('SHA256').update(userid).update(pin).digest('hex');
     return callback(key);
@@ -49,7 +49,7 @@ function generateMasterKey(FileMapKey, random, callback) {
   return callback(key);
 }
 
-function generateFileKey(MasterKey, FileID, callback) { // TODO: WHERE this will be called ?
+function generateFileKey(MasterKey, FileID, callback) {
   // hash MasterKey with FileID
   var key = crypto.createHash('SHA256').update(MasterKey).update(FileID).digest('hex');
   return callback(key);

@@ -4,7 +4,7 @@ import { signup,login } from '../app/utils/auth'
 
 const myport = 1337;
 const user_ID = 'YEHIA_HESHAM_SAIDAUC';
-const pin = '12345';
+const pin = '12345'; 
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
@@ -12,7 +12,8 @@ const seed = [
 ];
 // console.log(require('buffer').kMaxLength);
 signup(user_ID, (userID) => {
-  login(userID, pin, ()=>{
+  login(userID, pin, (err)=>{
+    if(err){  return console.error(err);  }
     initHost(myport, userID, seed, () => {
 
       console.log('\tidentity is ' + node.router.identity.toString('hex'));
