@@ -17,8 +17,7 @@ initHost(myport, networkID, seed, () => {
 readFileMap((fileMap)=>{
   const fileMapSize = Object.keys(fileMap).length;
   const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
-  const FileID=lastFileID;
-  download(FileID, (err)=>{
+  download('2f4705695709092e7d34c366c3ab1399', (err)=>{
     if(err) console.log('download Failed ! '+err);
     else console.log('download Complete !');
     });

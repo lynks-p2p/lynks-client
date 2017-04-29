@@ -9,11 +9,8 @@ const networkID = 'TEST_ON_YEHIA_HESHAM';
 const myIP= ip.address();
 console.log(myIP);
 const seed = [
-
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-
   { hostname: '192.168.1.8', port: 2346 }
-
 ];
 
 initDHT( myIP, myport, networkID, seed, () => {
