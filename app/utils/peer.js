@@ -1,4 +1,4 @@
-
+/* eslint-disable */
 // const send_shred_request = require ('../../communication/client.js').send_shred_request;
 // const send_store_request = require ('../../communication/client.js').send_store_request;
 // const shredFile = require ('./file.js').shredFile;

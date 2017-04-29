@@ -12,9 +12,9 @@ import { node } from './peer';
 
 
 const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
-const pre_send_path = '/home/chouaib/Lynks/lynks-client/pre_send';
-const pre_store_path = './pre_store/';
-
+export const pre_send_path = '/home/chouaib/Lynks/lynks-client/pre_send/';
+const pre_store_path = '/home/chouaib/Lynks/lynks-client/pre_store/';
+const downloadsPath = '/home/chouaib/Lynks/lynks-client/Downloads/';
 
 
 function generateFileID(callback) {  // TODO: WHERE this will be called ?
@@ -349,7 +349,7 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
-              bufferToFile('./Downloads/' + filename, decompressedBuffer, () => {
+              bufferToFile(downloadsPath + filename, decompressedBuffer, () => {
                 console.log('Success!');
                 for (const index in shredIDs) {
                   if (shredIDs[index]) {
@@ -562,5 +562,6 @@ export {
   shredFile,
   reconstructFile,
   upload,
-  download
+  download,
+  storeFileMap
 };
