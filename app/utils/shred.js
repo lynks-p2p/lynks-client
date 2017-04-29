@@ -82,7 +82,7 @@ function getShredHandler(socket, shredID, shredsPath, callback) { // setup for r
     });
   });
 }
-var x=0;
+
 function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a shred TO  a Peer
 
   const socket = socketclient(`http://${ip}:${port}`);
@@ -124,4 +124,4 @@ function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a 
 }
 
 
-export { generateShredID, saveHost, retrieveHosts, sendShredHandler, getShredHandler, storeShredRequest, getShredRequest };
+export { saveHost, retrieveHosts, sendShredHandler, getShredHandler, storeShredRequest, getShredRequest };

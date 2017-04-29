@@ -156,7 +156,6 @@ function erasureDecode(shredsBuffer, targets, parity, dataShreds, callback) {
     });
 }
 
-
 function storeFileMap(fileMap, callback) {
   // store FileMap in specified filemap path
   fs.writeFileSync(fileMapPath, JSON.stringify(fileMap));
@@ -276,8 +275,6 @@ function shredFile(filename, filepath, key, NShreds, parity, callback) {
   });
 }
 
-
-
 function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   let buffer = new Buffer([]);
 
@@ -344,7 +341,6 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
-
 function upload(filepath, callback) { //  to upload a file in Lynks
 
     // call peer.getPeers()
@@ -385,7 +381,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
       return callback('error shredding file');
     }
     console.log ('Done shredding');
-    /*  This for the memory Leak error. 
+    /*  This for the memory Leak error.
         const maxTotalBuffer = 400000000;  //to be safe
         const { shardLength } = file;
         var shredsSent=0;   //number of shreds sent successfully
@@ -454,7 +450,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
 
 
-async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
+ async.eachOf(shredIDs, (val, index, asyncCallback) =>{ //  loop to upload shreds to peers in parallel
         //TODO: we need to try n times before aborting, here it aborts from single failure
         storeShredRequest(hosts[index]['ip'], hosts[index]['port'], val,pre_send_path, (err) => { // sending to a single Peer
           if(err) { console.error(err); return asyncCallback();}
@@ -625,21 +621,22 @@ function download(FileID,callback){  //to upload a file in Lynks
 
 
 export {
+  getFileList,
   fileToBuffer,
   bufferToFile,
   compress,
   decompress,
-  shredFile,
-  recoverFile,
   encrypt,
   decrypt,
-  getFileList,
+  erasureCode,
+  erasureDecode,
+  storeFileMap,
+  readFileMap,
   createFileMap,
   getFileMap,
   syncFileMap,
   addFileMapEntry,
   removeFileMapEntry,
-  readFileMap,
   shredFile,
   reconstructFile,
   upload,

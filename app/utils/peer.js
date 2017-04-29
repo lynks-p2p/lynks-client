@@ -25,7 +25,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    storage: levelup('./DHT_Storage2/'),
+    storage: levelup('./DHT_Storage/'),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });
@@ -100,68 +100,4 @@ function getPeers() {
   return 0;
 }
 
-// function shred_and_send(public_ip, public_port, filename, filepath, key, NShreds, parity) {
-//   shredFile(filename, filepath + filename, key, NShreds, parity, (shredIDs)=>{
-//     console.log ('done shredding');
-//     send_store_request(public_ip, public_port, shredIDs, (path) => {
-//       var fs = require ('fs');
-// <<<<<<< Authentication
-//       const filepath = path + shredIDs[index];
-//         if (fs.existsSync(filepath)) {
-//           fs.unlink(path + shredIDs[index], () => {});
-//         }
-// =======
-//       for (var index in shredIDs) {
-//         const filepath = path + shredIDs[index];
-//         if (fs.existsSync(filepath)) {
-//           fs.unlink(path + shredIDs[index], () => {});
-//         }
-//       }
-// >>>>>>> develop
-//     });
-//   });
-// }
-
-function receive_and_gather(public_ip, public_port, fileID, callback) {
-
-  // CHANGE ME: parameterized shreds name, file sizes, number of shreds, targets length... etc.
-
-  readFileMap((fileMap) => {
-    const file = fileMap[fileID];
-    if (file) {
-      const shredIDs = file['shreds'];
-
-      var shuffle = require('shuffle-array');
-      var requiredShreds = [];
-      for (var i=0; i<shredIDs.length; i++){
-        requiredShreds.push(i);
-      }
-      shuffle(requiredShreds);
-      requiredShreds = requiredShreds.slice(0, 10);
-
-      var targets = 0x3FFFFFFF;
-      // -1 ^ (3 << 30);
-      console.log('initial targets' + targets.toString(2));
-      // ~( target & 0);
-      for (var i=0; i < requiredShreds.length; i++){
-        // if (requiredShreds.indexOf(shredIDs[i]) >= 0) {
-        targets ^= (1 << requiredShreds[i]);
-        requiredShreds[i] = 'shred_' + requiredShreds[i]
-        // }
-      }
-      console.log('targets: ' + targets.toString(2));
-      console.log('chosen shreds: ' + requiredShreds);
-      send_shred_request(public_ip, public_port, requiredShreds, (shredspath) => {
-        reconstructFile(fileID, targets, shredIDs, shredspath, (err) => {
-          if (err){
-            console.log(err);
-            //make a decision
-          }
-          else return callback(null);
-        });
-      });
-    } else return callback('error');
-  });
-}
-
-export { node, getPeers, initHost, initDHT, initFileDelivery, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost, initDHT, initFileDelivery  };
