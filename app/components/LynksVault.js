@@ -9,7 +9,7 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
-import {readFilesInfo, markFileDownloaded, fileMapPath, key, uploadMessage, NShreds, parity, targets} from '../utils/state';
+import {readFilesInfo, loadActivityPattern, fileMapPath, key, uploadMessage, NShreds, parity, targets} from '../utils/state';
 import {shredFile, removeFileMapEntry, pre_send_path} from '../utils/file';
 import FileFileDownload from 'material-ui/svg-icons/file/file-download';
 import ActionDeleteForever from 'material-ui/svg-icons/action/delete-forever';
@@ -20,7 +20,10 @@ import ContentAdd from 'material-ui/svg-icons/content/add';
 import LinearProgress from 'material-ui/LinearProgress';
 import Snackbar from 'material-ui/Snackbar';
 import IconButton from 'material-ui/IconButton';
-
+import FlatButton from 'material-ui/FlatButton';
+import FontIcon from 'material-ui/FontIcon';
+import CloudDone from 'material-ui/svg-icons/file/cloud-done';
+import Storage from 'material-ui/svg-icons/device/storage';
 
 const uploadButton = {
   position: 'relative',
@@ -31,18 +34,6 @@ const uploadButton = {
 };
 const iconStyles = {
   marginRight: 20,
-};
-const buttonStyle1 = {
-  position: 'relative',
-  left: 70,
-  top: 10,
-  width: 220
-};
-const buttonStyle2 = {
-  position: 'relative',
-  left: 380,
-  top: 10,
-  width: 220
 };
 class LynksVault extends Component {
 
@@ -108,7 +99,7 @@ class LynksVault extends Component {
         break;
       }
     }
-    this.setState({ ...state, files: files });
+    this.setState({ ...this.state, files: files });
   }
 
   render() {
@@ -158,7 +149,7 @@ class LynksVault extends Component {
       <div>
         <Paper className={styles.filespaper} zDepth={1}>
           <Table
-            height='512px'
+            height='505px'
             selectable={false}
           >
             <TableHeader
@@ -182,13 +173,27 @@ class LynksVault extends Component {
             <TableFooter>
               <TableRow>
                 <TableRowColumn colSpan="3" style={{textAlign: 'center'}}>
-                  {/* <RaisedButton label="Files Uploaded: " style={buttonStyle1} />
-                  <RaisedButton label="Space Used: " style={buttonStyle2}/> */}
-                  <FloatingActionButton>
-                    <FileReaderInput id="my-file-input" onChange={this.handleChange}>
-                      <ContentAdd />
-                    </FileReaderInput>
-                   </FloatingActionButton>
+                  <div>
+                    <FlatButton
+                      label="Uploaded Files"
+                      disableTouchRipple={true}
+                      labelPosition="before"
+                      primary={true}
+                      icon={<CloudDone />}
+                    />
+                    <FlatButton
+                      labelPosition="before"
+                      disableTouchRipple={true}
+                      label="5.2 Gb Used"
+                      secondary={true}
+                      icon={<Storage />}
+                    />
+                    <FloatingActionButton>
+                      <FileReaderInput id="my-file-input" onChange={this.handleChange}>
+                        <ContentAdd />
+                      </FileReaderInput>
+                     </FloatingActionButton>
+                  </div>
                 </TableRowColumn>
               </TableRow>
             </TableFooter>
