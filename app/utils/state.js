@@ -23,7 +23,7 @@ export function readFilesInfo() {
           name: fileMap[key].name,
           status: 1,
           uploadTime: fileMap[key].uploadTime,
-          size: `${fileMap[key].size/1000}KB`,
+          size: fileMap[key].size/1000,
         });
     }
   }

@@ -20,6 +20,13 @@
   width: 99%;
 }
 
+.filesButton {
+  position: relative;
+  top: 0px;
+  left: 0px;
+  width: 48%;
+}
+
 .medium {
     width: 96;
     height: 96;

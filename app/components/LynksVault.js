@@ -24,13 +24,16 @@ import FlatButton from 'material-ui/FlatButton';
 import FontIcon from 'material-ui/FontIcon';
 import CloudDone from 'material-ui/svg-icons/file/cloud-done';
 import Storage from 'material-ui/svg-icons/device/storage';
+import Chip from 'material-ui/Chip';
+import Avatar from 'material-ui/Avatar';
 
-const uploadButton = {
+const filesButton = {
+  padding: 0,
+  width: '48%',
+};
+const filesUpload = {
   position: 'relative',
-  left: 70,
-  top: 30,
-  width: 220,
-  border: 'black',
+  bottom: '0px'
 };
 const iconStyles = {
   marginRight: 20,
@@ -67,7 +70,7 @@ class LynksVault extends Component {
         name: file.name,
         status: 1,
         uploadTime: uploadTime,
-        size: `${file.size/1000}KB`,
+        size: file.size/1000,
       });
     });
     this.setState({ files: files });
@@ -104,12 +107,16 @@ class LynksVault extends Component {
 
   render() {
     const files = this.state.files;
+    let filesSize=0;
+    for ( let i =0; i<this.state.files.length; i++) {
+      filesSize+=files[i].size;
+    }
     console.log(this.state.files);
     const filesElem = files.map((file) => {
       return (
         <TableRow>
           <TableRowColumn>{file.name}</TableRowColumn>
-          <TableRowColumn>{file.size}</TableRowColumn>
+          <TableRowColumn>{`${file.size.toFixed(3)}KB`}</TableRowColumn>
           <TableRowColumn>{file.uploadTime}</TableRowColumn>
           <TableRowColumn>
             {
@@ -172,28 +179,30 @@ class LynksVault extends Component {
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableRowColumn colSpan="3" style={{textAlign: 'center'}}>
-                  <div>
+                <TableRowColumn style={{textAlign: 'left'}}>
                     <FlatButton
-                      label="Uploaded Files"
+                      style={filesButton}
+                      hoverColor='#FFFFFFF'
+                      labelPosition="before"
+                      disableTouchRipple={true}
+                      label={`${(filesSize/1000).toFixed(2)}MB Space Used`}
+                      secondary={true}
+                      icon={<Storage />}
+                    />
+                    <FlatButton
+                      style={filesButton}
+                      hoverColor='#FFFFFFF'
+                      label={`${this.state.files.length} Files Uploaded`}
                       disableTouchRipple={true}
                       labelPosition="before"
                       primary={true}
                       icon={<CloudDone />}
                     />
-                    <FlatButton
-                      labelPosition="before"
-                      disableTouchRipple={true}
-                      label="5.2 Gb Used"
-                      secondary={true}
-                      icon={<Storage />}
-                    />
-                    <FloatingActionButton>
-                      <FileReaderInput id="my-file-input" onChange={this.handleChange}>
-                        <ContentAdd />
-                      </FileReaderInput>
-                     </FloatingActionButton>
-                  </div>
+                  <FloatingActionButton style={filesUpload}>
+                    <FileReaderInput id="my-file-input" onChange={this.handleChange}>
+                      <ContentAdd />
+                    </FileReaderInput>
+                   </FloatingActionButton>
                 </TableRowColumn>
               </TableRow>
             </TableFooter>
