@@ -160,6 +160,7 @@
   },
   "dependencies": {
     "bson-objectid": "^1.1.5",
+    "crypto-js": "^3.1.9-1",
     "delivery": "^0.0.6",
     "electron-debug": "^1.1.0",
     "font-awesome": "^4.7.0",
@@ -176,6 +177,7 @@
     "redux": "^3.6.0",
     "redux-thunk": "^2.2.0",
     "reed-solomon": "^3.1.1",
+    "request": "^2.81.0",
     "shuffle-array": "^1.0.1",
     "source-map-support": "^0.4.10"
   },

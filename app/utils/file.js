@@ -5,7 +5,7 @@ import ObjectID from 'bson-objectid';
 import path from 'path';
 import async from 'async';
 import fs from 'fs';
-
+import request from 'request'
 import { storeShredRequest, getShredRequest, saveHost, retrieveHosts } from './shred';
 import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
 
@@ -15,7 +15,7 @@ import { getMasterKey,getFileMapKey } from './auth'
 const fileMapPath = 'filemap.json';
 const pre_send_path = './pre_send/';
 const pre_store_path = './pre_store/';
-
+var baseURL = 'http://10.40.40.61:4040/api/';
 
 function getFileList() {
   return 0;
@@ -24,11 +24,11 @@ function getFileList() {
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
     fs.readFile(path, (err, data) => {
-      if (err) return callback(0);
-      return callback(data);
+      if (err) return callback(null, err);
+      return callback(data, null);
     });
   }
-  else return callback(0);
+  else return callback(null, 'file does not exist');
 }
 
 function bufferToFile(path, buffer, callback) {
@@ -155,6 +155,15 @@ function erasureDecode(shredsBuffer, targets, parity, dataShreds, callback) {
         callback(restoredShreds);
     });
 }
+function updateTimeStamp(callback) {
+  readFileMap((fileMap,error) => {
+    if(error) { return callback(null, 'error in reading FileMap');  }
+    fileMap[stmp]  = Date.now();
+    storeFileMap(fileMap, () => {
+      return callback(fileMap[stmp], null);
+    });
+  });
+}
 
 function storeFileMap(fileMap, callback) {
   // store FileMap in specified filemap path
@@ -164,34 +173,34 @@ function storeFileMap(fileMap, callback) {
 
 function createFileMap(callback) {
   // init file map
-  const fileMap = {'rnd':crypto.randomBytes(8).toString('hex') };
+  const fileMap = {'stmp': Date.now(), 'rnd':crypto.randomBytes(8).toString('hex') };
   storeFileMap(fileMap, () => {
     callback();
   });
 }
 
-function encryptFileMap(fileName,callback) { //encrypts the fileMap and writes it on disk and returns the name of the encrypted Filename
-  fileToBuffer(fileMapPath,(data)=>{
+function encryptFileMap(callback) { //encrypts the fileMap and writes it on disk and returns the name of the encrypted Filename
+  fileToBuffer(fileMapPath,(data, err)=>{
     encrypt(data, getFileMapKey(),(buffer)=>{
-      bufferToFile(fileName, buffer,()=>{
-        console.log('An encrypted FileMap file was created');
-        callback(fileName);
-      });
+      return callback(buffer);
     });
   });
 }
 
-function decryptFileMap(fileName,callback) { //decreypts and replaces if exist the existing filemap
-  fileToBuffer(fileName,(data)=>{
-    decrypt(data, getFileMapKey() ,(buffer)=>{
-      bufferToFile('filemap.json', buffer,()=>{ // replace the old
-        console.log('Decrypted FileMap file was created');
-        callback();
-      });
-    });
+function decryptFileMap(data, callback) { //decreypts and replaces if exist the existing filemap
+  decrypt(data, getFileMapKey() ,(buffer)=>{
+    callback(buffer);
   });
 }
-
+function readFileMapBuffer(fileMapBuffer, callback) {
+  try {
+        const fileMap = JSON.parse(fileMapBuffer);
+        return callback(fileMap,null);
+  } catch(error)
+   {
+      return callback(null,error);
+  }
+}
 function readFileMap(callback) {
   try {
     // load filemap from disk
@@ -203,45 +212,57 @@ function readFileMap(callback) {
     } else {
       fileMap = JSON.parse(fs.readFileSync(fileMapPath));
     }
-    callback(fileMap,null);
+    return callback(fileMap,null);
 
   } catch(error)
    {
       // console.error(error);
-      callback(null,error);
+      return callback(null,error);
   }
 }
 
-function getFileMap(callback) { //  gets FileMap from boker & decrypts FileMap
+function getRemoteFileMap(remoteData, callback) { //  gets FileMap from boker & decrypts FileMap
 
   // TODO:get FileMap from server
   // TODO: if failed, you need to check for existing local FileMap and use it instead
   // optimization for future: only get hash of FileMap to check if local FileMap is up-to-date
-
-  const fileName='encryptedFileMap';
-  decryptFileMap(fileName,()=>{
-    readFileMap((fileMap,error)=>{
-      if(error) {
-          fs.unlink(fileMapPath, () => {});
+  // const fileName='encryptedFileMap';
+  decryptFileMap(remoteData, (fileMapBuffer) => {
+    readFileMapBuffer(fileMapBuffer, (remoteFileMap, err) => {
+      if(err) {
          return callback(null,'Failed to decrypt remote FileMap');
        }
-      console.log('successfully retrieved the remote fileMap');
-      callback(fileMap,null);
+      readFileMap((fileMap, error)=>{
+        if(error) {
+          console.log(error);
+           return callback(null, error);
+         }
+         console.log('successfully retrieved the remote fileMap');
+         if (remoteFileMap['stmp'] > fileMap['stmp']){
+           console.log('broker is more updated');
+           storeFileMap(remoteFileMap => {});
+           return callback(remotefileMap, null);
+         }else return callback(fileMap, null);
+      });
     });
   });
-
-
-
 }
 
 function syncFileMap(callback) { // updates the remote FileMap
-  encryptFileMap('encryptedFileMap',()=>{
-    callback();
+  encryptFileMap((fileMapBuffer)=>{
+    baseURL += 'updateFileMap';
+    request.put(
+      baseURL,
+      {json: {fileMap: fileMapBuffer}},
+      (error, response, body) => {
+          if (!error && response.statusCode == 200) {
+              console.log('file map synced with broker');
+              return callback(null);
+          } else return callback(error);
+      }
+    );
   });
-
-  // TODO: make update request to server
   // optimization: have queue to manage file uploads and "batch" loggin into fileMap
-
 }
 
 function addFileMapEntry(fileID, fileMapEntry, callback) {
@@ -270,7 +291,7 @@ function removeFileMapEntry(fileID, callback) {
 }
 
 function shredFile(filename, filepath, NShreds, parity, callback) {
-  fileToBuffer(filepath, (loadedBuffer) => {
+  fileToBuffer(filepath, (loadedBuffer, err) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
       return callback(null);
@@ -308,7 +329,7 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
                         //const lastFileID = [Object.keys(fileMap)[fileMapSize-1]];
                         addFileMapEntry(fileID, fileMapEntry, (err) => {
                           if(err) { console.error(err); return callback(null); }
-                          return callback(fileMapEntry, shredIDs);
+                          return callback(fileID, fileMapEntry, shredIDs);
                           });
                         });
                       }
@@ -344,7 +365,7 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
       const shredPresent = ~targets & (1 << index);
       if (shredPresent) {
         // console.log('shred: ' + index);
-        fileToBuffer(shredsPath + shredIDs[index], (data) => {
+        fileToBuffer(shredsPath + shredIDs[index], (data, err) => {
 	         if(!data) {return callback2('error!,'+ shredIDs[index]+' is corrupted !')	}
             buffer = Buffer.concat([buffer, data]);
           if (index < limit - 1) readShreds(index + 1, limit, callback2);
@@ -371,7 +392,6 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
         if(error) { return callback('error in reading FileMap');  }
         const filename = fileMap[fileID]['name'];
         erasureDecode(buffer, targets, parity, NShreds, (loadedBuffer) => {
-
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
@@ -424,7 +444,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
 
-  shredFile(fileName, filepath, NShreds, parity, (file, shredIDs) => {
+  shredFile(fileName, filepath, NShreds, parity, (fileID, file, shredIDs) => {
     if ((!shredIDs)||(!file)) {
       console.log('error shredding file');
       return callback('error shredding file');
@@ -529,10 +549,24 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
           }, (err) => { // after all shred-host pairs are uploaded on DHT
 
-            if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+            if(err)  {
+              removeFileMapEntry(fileID, () => {});
+              console.error('error in Uploading shreds to DHT !');
+              return callback(err);
+            }
             console.log('done Uploading shreds to DHT');
-
-            callback(null);
+            updateTimeStamp((time, error)=>{
+              if (error){
+                return callback(error);
+              }
+              syncFileMap((err) => {
+                if (err){
+                  return callback(err);
+                }
+                console.log('file upload complete!!!');
+                return callback(null);
+              });
+            });
           });
         });
     });
@@ -685,7 +719,7 @@ export {
   decryptFileMap,
   readFileMap,
   createFileMap,
-  getFileMap,
+  getRemoteFileMap,
   syncFileMap,
   addFileMapEntry,
   removeFileMapEntry,
