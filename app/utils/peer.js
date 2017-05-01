@@ -20,7 +20,14 @@ import {  bufferToFile } from './file'
 import { sendShredHandler, getShredHandler } from './shred';
 
 
+
+const quasar = require('kad-quasar');
+const app = require('express')();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
 let node;
+let remaining_capacity=100;
 
 function initDHT(ip, port, networkID, seed, callback) {
   //MyIp , myID : strings
@@ -64,6 +71,10 @@ function initDHT(ip, port, networkID, seed, callback) {
     })
   });
 }
+
+
+
+
 
 function initFileDelivery(port, callback) {
   const io  = socketio.listen(port);
@@ -131,7 +142,44 @@ function initHost( port, networkID, seed, callback) {
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
 
-      console.log('Tracking  using the Defaults activityPath');
+      console.log('Tracking using the Defaults activityPath');
+
+      node.plugin(quasar);
+
+      node.quasarSubscribe('icanhost', (broadcast) => {
+          console.log('recieved sth');
+          loadActivityPattern((myactivity)=>{
+
+              var mycontent = {
+                  ip: ip.address(),
+                  port: port,
+                  id: node.identity.toString('hex'),
+                  activity: myactivity
+              }
+
+              var uploaderip = broadcast['ip'];
+              var uploaderport = broadcast['port'];
+              var shredsize = broadcast['shred_size'];
+
+              if(remaining_capacity > shredsize)
+              {
+                  const socket = socketclient(`http://${uploaderip}:${uploaderport}`);
+
+                  socket.on('connect', function (socket) {
+                      console.log('Connected!');
+                  });
+
+                  socket.on('send.success', (yo) => {
+                      console.log(yo);
+                      socket.disconnect();
+                  });
+
+                  socket.emit('subscriber', mycontent);
+              }
+          });
+      });
+      console.log('Subscribed');
+
       trackActivityPattern(); // no callback (running function as long as the app is used )
 
       callback();
@@ -139,12 +187,58 @@ function initHost( port, networkID, seed, callback) {
   });
 }
 
-function getPeers() {
-  // get list of n best peers
 
 
-  return 0;
+
+function getPeers(callback, newhosts)
+{
+    var counter = 0;
+
+    var hosts = [];
+
+    node.plugin(quasar);
+
+    var broadcast = {
+        ip: ip.address(),
+        port: 3000,
+        shred_size: 90
+    }
+
+    node.quasarPublish('icanhost', broadcast);
+
+    io.on('connection', function (socket){
+        console.log('connection');
+
+        socket.on('subscriber', function (content) {
+            hosts.push(content)
+            socket.emit('send.success', 'response reached uploader.');
+            counter++;
+
+            console.log(counter);
+            if(counter==3)
+            {
+                console.log('should disconnect now');
+                http.close();
+            }
+        });
+
+    });
+
+    http.listen(3000, function () {
+      console.log('listening on *:3000');
+    });
+
+    setTimeout(()=>{
+      console.log('timeout!');
+      http.close();
+      sortHosts(hosts, (newhosts)=>{
+          console.log('Done sorting.');
+          callback(newhosts);
+      });
+    }, 10000);
 }
+
+
 
 function getPeerLatency(ip,callback) {
 
@@ -315,8 +409,6 @@ function sortHosts(hosts, callback) {
 
     async.parallel(asyncTasks, function(){
         // console.log('All is done.');
-        // sorting should be done here
-
         hosts.sort(function(a, b) {
             return b['score'] - a['score'];
         });
@@ -377,4 +469,4 @@ function receive_and_gather(public_ip, public_port, fileID, callback) {
   });
 }
 
-export { node, getPeers, initHost,initDHT, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts, shred_and_send, receive_and_gather };
+export { node, getPeers, initHost,initDHT, initHost2, initDHT2, initFileDelivery,getPeerLatency,loadActivityPattern,createActivityPatternFile,trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts, shred_and_send, receive_and_gather };
