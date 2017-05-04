@@ -99,41 +99,7 @@ function initHost( port, networkID, seed, callback) {
 
       console.log('Tracking using the Defaults activityPath');
 
-      node.plugin(quasar);
-
-      node.quasarSubscribe('icanhost', (broadcast) => {
-          console.log('recieved sth');
-          loadActivityPattern((myactivity)=>{
-
-              var mycontent = {
-                  ip: ip.address(),
-                  port: port,
-                  id: node.identity.toString('hex'),
-                  activity: myactivity
-              }
-
-              var uploaderip = broadcast['ip'];
-              var uploaderport = broadcast['port'];
-              var shredsize = broadcast['shred_size'];
-
-              if(remaining_capacity > shredsize)
-              {
-                  const socket = socketclient(`http://${uploaderip}:${uploaderport}`);
-
-                  socket.on('connect', function (socket) {
-                      console.log('Connected!');
-                  });
-
-                  socket.on('send.success', (yo) => {
-                      console.log(yo);
-                      socket.disconnect();
-                  });
-
-                  socket.emit('subscriber', mycontent);
-              }
-          });
-      });
-      console.log('Subscribed');
+      initSubscribe();      // subscribe to topic for hosting shreds
 
       trackActivityPattern(); // no callback (running function as long as the app is used )
 
@@ -252,7 +218,45 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 
 }
 
-function getPeers(callback, newhosts){
+function initSubscribe(){
+    node.plugin(quasar);
+
+    node.quasarSubscribe('icanhost', (broadcast) => {
+        console.log('recieved a broadcast');
+        loadActivityPattern((myactivity)=>{
+
+            var mycontent = {
+                ip: ip.address(),
+                port: port,
+                id: node.identity.toString('hex'),
+                activity: myactivity
+            }
+
+            var uploaderip = broadcast['ip'];
+            var uploaderport = broadcast['port'];
+            var shredsize = broadcast['shred_size'];
+
+            if(remaining_capacity > shredsize)
+            {
+                const socket = socketclient(`http://${uploaderip}:${uploaderport}`);
+
+                socket.on('connect', function (socket) {
+                    console.log('Connected!');
+                });
+
+                socket.on('send.success', (yo) => {
+                    console.log(yo);
+                    socket.disconnect();
+                });
+
+                socket.emit('subscriber', mycontent);
+            }
+        });
+    });
+    console.log('Subscribed to icanhost.');
+}
+
+function getPeers(shredsize, callback){
     var counter = 0;
 
     var hosts = [];
@@ -262,7 +266,7 @@ function getPeers(callback, newhosts){
     var broadcast = {
         ip: ip.address(),
         port: 3000,
-        shred_size: 90
+        shred_size: shredsize
     }
 
     node.quasarPublish('icanhost', broadcast);
@@ -276,7 +280,7 @@ function getPeers(callback, newhosts){
             counter++;
 
             console.log(counter);
-            if(counter==3)
+            if(counter>=90)
             {
                 console.log('should disconnect now');
                 http.close();
@@ -311,39 +315,36 @@ function getPeerLatency(ip,callback) {
       });
 }
 
-function calculateMatching(hostactivity, callback, score) {            // the function recieves the host's activity in array form
+function calculateMatching(hostactivity, callback) {  // the function recieves the host's activity in array form  const deltaMinutes =  10; it update activity every 10 min
+  const activityDays =  7; // activity for 1 week
+  const activityPath = 'ActivityPattern.json';
 
-    const deltaMinutes =  10; // update activity every 10 min
-    const activityDays =  7; // activity for 1 week
-    const activityPath = 'ActivityPattern.json';
+  //calculated variables
+  const partsPerHour = Math.ceil(60/deltaMinutes);
+  const partsPerDay  = Math.ceil(24*60/deltaMinutes);
+  const activityParts = Math.ceil(activityDays * partsPerDay)
 
-    //calculated variables
-    const partsPerHour = Math.ceil(60/deltaMinutes);
-    const partsPerDay  = Math.ceil(24*60/deltaMinutes);
-    const activityParts = Math.ceil(activityDays * partsPerDay)
+  if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
+  {
 
-    if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
-    {
+    loadActivityPattern((activity)=>{
 
-      loadActivityPattern((activity)=>{
+      console.log('Successful load of Uploader Activity Pattern !');
 
-        console.log('Successful load of Uploader Activity Pattern !');
+      var counter = 0;
+      for (var i = 0; i < activityParts; i++) {
+          if(hostactivity[i]==1 && activity[i]==1)
+              counter++;
+      }
+      callback(counter);
+    });
+  } else {  //  Activity Pattern File doesn't exit
 
-        var counter = 0;
-        for (var i = 0; i < activityParts; i++) {
-            if(hostactivity[i]==1 && activity[i]==1)
-                counter++;
-        }
-        callback(counter);
-      });
-    } else {  //  Activity Pattern File doesn't exit
-
-      return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
-    }
+    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
+  }
 }
 
-function calculateHostAvailability(hostactivity, callback, score) {            // the function recieves the host's activity in array form
-
+function calculateHostAvailability(hostactivity, callback) {            // the function recieves the host's activity in array form
     const deltaMinutes =  10; // update activity every 10 min
     const activityDays =  7; // activity for 1 week
 
