@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import request from 'request';
 const fileMapPath = 'filemap.json';
 
-var masterKey, userID, pin,fileMapKey;
+var masterKey, userID, pin, fileMapKey, userName;
 var baseURL = 'http://10.40.47.118:4040/api/users/';
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
@@ -15,6 +15,7 @@ function signup(userName, pin, callback) { // sign up request to get unique user
     console.log('userID: ' + userID);
     baseURL += 'signup';
     setUserID(userID);
+    setUserName(userName);
     createFileMap(()=>{
       generateFileMapKey(userID, pin, (fileMapKey) => {
         setFileMapKey(fileMapKey);
@@ -47,6 +48,7 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
     {json: {username: userName}},
      (error, response, body) => {
         if (!error && response.statusCode == 200) {
+          setUserName(userName);
           setUserID(userID);
           setPin(pin);
           generateFileMapKey(userID, pin, (fileMapKey) => { //generate the fileMapKey
@@ -76,12 +78,16 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
   );
 }
 
+function setUserName (uName) { // Sets the userID
+  userName = uName;
+}
+
 function setUserID (uID) { // Sets the userID
   userID = uID;
 }
 
 function setPin (uPin) { // Sets the user's pin
-  return pin = uPin;
+   pin = uPin;
 }
 
 function setFileMapKey (filemapKey) { // Sets the MasterKey
@@ -92,6 +98,9 @@ function setMasterKey (mKey) { // Sets the MasterKey
   masterKey = mKey;
 }
 
+function getUserName () { // Sets the userID
+  return userName;
+}
 function getUserID () { // get the userID
   return userID;
 }
@@ -108,4 +117,4 @@ function getFileMapKey () { // gets the MasterKey
   return fileMapKey;
 }
 
-export { login, signup, getUserID, getPin, getMasterKey,getFileMapKey, setUserID, setPin, setMasterKey };
+export { login, signup, getUserID, getPin, getMasterKey,getFileMapKey, setUserID, setPin, setMasterKey, setUserName, getUserName };

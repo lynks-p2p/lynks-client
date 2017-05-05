@@ -2,9 +2,12 @@ import kad from 'kad';
 import dl from 'delivery';
 import fs from 'fs';
 import socketclient from 'socket.io-client';
-
+var ind=0;
 import { node } from './peer';
-
+const maxUploadSize = 200000000;
+const maxDownloadSize = 200000000;
+var currentUploadSize = 0;
+var currentDownloadSize = 0;
 function saveHost(shredID,hostID,callback) { //  function to save the shred-host pair on the DHT
 
 
@@ -47,7 +50,13 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
   const delivery = dl.listen(socket);
   delivery.connect();
   delivery.on('delivery.connect', (delivery) => {
-    const filepath = shredsPath + shredID;
+    let filepath = shredsPath + shredID;
+    let stats = fs.statSync(filepath);
+    if (currentUploadSize > maxUploadSize){
+      console.log('too much!');
+      socket.emit('shred_retrieve_fail');
+    }
+    currentUploadSize += stats.size;
     if (fs.existsSync(filepath)) {
       delivery.send({
         name: shredID,
@@ -58,26 +67,33 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
       socket.emit('shred_retrieve_fail');
     }
     delivery.on('send.success', () => {
-      console.log('\tA shred was sent successfully!');
-      callback();
+      currentUploadSize -= stats.size;
+      console.log('\tA shred was sent successfully!' + ind++);
+      return callback(null);
     });
   });
 }
 
 function getShredHandler(socket, shredID, shredsPath, callback) { // setup for recieving shreds
   // console.log('listening to receive ...');
-
+  if (currentDownloadSize > maxDownloadSize ){
+    socket.emit('shred_retrieve_fail');
+  }
   const delivery = dl.listen(socket);
 
   delivery.on('receive.success', (shred) => {
+    let filepath = shredsPath + shredID;
+    let stats = fs.statSync(filepath);
+    currentDownloadSize += stats.size;
     fs.writeFile(shredsPath + shred.name, shred.buffer, (err) => {
       socket.disconnect();
+      currentDownloadSize -= stats.size;
       if (err) {
         console.log('\tshred could not be saved: ' + err);
-        callback(err);
+        return callback(err);
       } else {
         console.log('\tshred ' + shred.name + ' saved');
-        callback(null);
+        return callback(null);
       }
     });
   });

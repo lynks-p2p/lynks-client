@@ -96,6 +96,7 @@ function initFileDelivery(port, callback) {
 }
 
 function initHost( port, networkID, seed, callback) {
+  console.log('ip: ' + ip.address());
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
       my_port=port;
