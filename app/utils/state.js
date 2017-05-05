@@ -16,6 +16,9 @@ var targets = 0;
 export const uploadMessage = 'Stored & Secured';
 export const activityParts = 1008;
 export const nowIndex = 700;
+export const minStorageSlider = 0;
+export const maxStorageSlider = Math.pow(10, 6);
+export const powerStorageSlider = 12;
 
 export function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
@@ -94,4 +97,12 @@ export function getStorageInfo(){
   const used = getUsedSpace();
 
   return [empty,used]
+}
+
+export function transform(value) {
+  return Math.round((Math.exp(powerStorageSlider * value / maxStorageSlider) - 1) / (Math.exp(powerStorageSlider) - 1) * maxStorageSlider);
+}
+
+export function reverse(value) {
+  return (1 / powerStorageSlider) * Math.log(((Math.exp(powerStorageSlider) - 1) * value / maxStorageSlider) + 1) * maxStorageSlider;
 }

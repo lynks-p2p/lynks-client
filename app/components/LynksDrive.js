@@ -8,7 +8,14 @@ import Paper from 'material-ui/Paper';
 import styles from './LynksVault.css';
 import {Line} from 'react-chartjs-2';
 import {Doughnut} from 'react-chartjs-2';
-import {loadActivityPattern, getStorageInfo} from '../utils/state';
+import {
+  maxStorageSlider,
+  minStorageSlider,
+  transform,
+  reverse,
+  loadActivityPattern,
+  getStorageInfo,
+} from '../utils/state';
 import Refresh from 'material-ui/svg-icons/navigation/refresh';
 import Settings from 'material-ui/svg-icons/action/settings';
 import DonutSmall from 'material-ui/svg-icons/action/donut-small';
@@ -16,10 +23,15 @@ import {Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow,
 import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
 import getSize from 'get-folder-size';
+import Dialog from 'material-ui/Dialog';
+import Slider from 'material-ui/Slider';
+
+
 
 class LynksDrive extends Component {
 
   state = {
+    slider: Math.pow(10, 4),
     dialog: false,
     availabilityData: {
       labels: loadActivityPattern('labels'),
@@ -91,21 +103,40 @@ class LynksDrive extends Component {
     	}]
     }
  };
+
 handleRefresh(){
    console.log(getStorageInfo());
   //  this.forceUpdate();
- }
+};
+
 handleOpenDialog = () => {
-  this.setState({...state, dialog: true});
+  this.setState({...this.state, dialog: true});
 };
 
 handleCloseDialog = () => {
-  this.setState({...state, dialog: false});
+  this.setState({...this.state, dialog: false});
 };
+
+handleSlider = (event, value) => {
+  this.setState({...this.state, slider: transform(value)});
+};
+
 render() {
    const empty = this.state.StorageData.datasets[0].data[0];
    const used = this.state.StorageData.datasets[0].data[1];
-
+   const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onTouchTap={this.handleCloseDialog}
+      />,
+      <FlatButton
+        label="Submit"
+        primary={true}
+        keyboardFocused={true}
+        onTouchTap={this.handleCloseDialog}
+      />,
+    ];
    return (
      <div>
        <Paper className={styles.filespaper} zDepth={1}>
@@ -135,6 +166,25 @@ render() {
                       icon={<Settings />}
                       onTouchTap={this.handleOpenDialog}
                     />
+                    <Dialog
+                      title="Edit Storage Settings"
+                      actions={actions}
+                      modal={false}
+                      open={this.state.dialog}
+                      onRequestClose={this.handleClose}
+                    >
+                      {`Your current storage space is ${empty+used}Mb`}
+                      <Slider
+                        min={minStorageSlider}
+                        max={maxStorageSlider}
+                        step={maxStorageSlider / 100}
+                        value={reverse(this.state.slider)}
+                        onChange={this.handleSlider}
+                      />
+                      <p>
+                        {`Selected sotrage: ${this.state.slider}Mb`}
+                      </p>
+                    </Dialog>
                   </TableRowColumn>
                   <TableRowColumn colSpan="3" style={{textAlign: 'center'}}>
                     <Chip style={{marginLeft: 70, textAlign: 'center'}}>
