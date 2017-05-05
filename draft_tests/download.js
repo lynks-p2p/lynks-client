@@ -8,7 +8,7 @@ const pin = '12345';
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: '10.40.116.75', port: 2345 } //10.7.57.202
+  { hostname: '10.7.57.202', port: 2345 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
 signup(user_ID, (userID) => {
