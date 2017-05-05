@@ -15,6 +15,9 @@ import {
   reverse,
   loadActivityPattern,
   getStorageInfo,
+  getUsedSpace,
+  editStorage,
+  getFiles1
 } from '../utils/state';
 import Refresh from 'material-ui/svg-icons/navigation/refresh';
 import Settings from 'material-ui/svg-icons/action/settings';
@@ -31,7 +34,7 @@ import Slider from 'material-ui/Slider';
 class LynksDrive extends Component {
 
   state = {
-    slider: Math.pow(10, 4),
+    slider: 1024,
     dialog: false,
     availabilityData: {
       labels: loadActivityPattern('labels'),
@@ -105,15 +108,19 @@ class LynksDrive extends Component {
  };
 
 handleRefresh(){
-   console.log(getStorageInfo());
-  //  this.forceUpdate();
+  getUsedSpace();
 };
 
 handleOpenDialog = () => {
   this.setState({...this.state, dialog: true});
 };
 
-handleCloseDialog = () => {
+handleCancelDialog = () => {
+  this.setState({...this.state, dialog: false});
+};
+
+handleSubmitDialog = () => {
+  editStorage(this.state.slider);
   this.setState({...this.state, dialog: false});
 };
 
@@ -128,13 +135,13 @@ render() {
       <FlatButton
         label="Cancel"
         primary={true}
-        onTouchTap={this.handleCloseDialog}
+        onTouchTap={this.handleCancelDialog}
       />,
       <FlatButton
         label="Submit"
         primary={true}
         keyboardFocused={true}
-        onTouchTap={this.handleCloseDialog}
+        onTouchTap={this.handleSubmitDialog}
       />,
     ];
    return (
@@ -173,7 +180,7 @@ render() {
                       open={this.state.dialog}
                       onRequestClose={this.handleClose}
                     >
-                      {`Your current storage space is ${empty+used}Mb`}
+                      {`Your current storage space is ${empty+used}Mb  (${used.toFixed(2)}Mb Used)`}
                       <Slider
                         min={minStorageSlider}
                         max={maxStorageSlider}
@@ -182,7 +189,8 @@ render() {
                         onChange={this.handleSlider}
                       />
                       <p>
-                        {`Selected sotrage: ${this.state.slider}Mb`}
+                        <span>{`Selected sotrage: ${(this.state.slider>=1024)?(this.state.slider/1024).toFixed(2):this.state.slider}`}</span>
+                        <span>{`${(this.state.slider>=1024)?'Gb':'Mb'}`}</span>
                       </p>
                     </Dialog>
                   </TableRowColumn>

@@ -9,7 +9,7 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
-import {readFilesInfo, loadActivityPattern, fileMapPath, key, uploadMessage, NShreds, parity, targets} from '../utils/state';
+import {readFilesInfo, loadActivityPattern, fileMapPath, uploadMessage} from '../utils/state';
 import {shredFile, removeFileMapEntry, pre_send_path} from '../utils/file';
 import FileFileDownload from 'material-ui/svg-icons/file/file-download';
 import ActionDeleteForever from 'material-ui/svg-icons/action/delete-forever';
@@ -57,10 +57,9 @@ class LynksVault extends Component {
     const fileKey = files.length + 1;
     results.forEach(result => {
       const [e, file] = result;
-      shredFile(file.name,file.path,key,NShreds,parity, (shredIDs) => {
-        console.log(shredIDs);
-        IDsofShreds=shredIDs;
-      })
+
+      // call upload function from file.js
+
       files.push({
         id: fileKey,
         shreds: IDsofShreds,
@@ -78,7 +77,9 @@ class LynksVault extends Component {
     let fileName;
     for(var i in files) {
       if(files[i].id == fileID) {
+
         // call download from file.js
+
         files[i].status = 0;
         fileName = files[i].fileName;
         break;
@@ -114,10 +115,19 @@ class LynksVault extends Component {
     }
     console.log(this.state.files);
     const filesElem = files.map((file) => {
+      let fileSize = file.size;
+      let fileUnit = 'KB'
+      if (file.size>(1024*1024)){
+        fileSize = file.size / 1024 / 1024;
+        fileUnit = 'Gb';
+      } else if(file.size>1024){
+        fileSize = file.size / 1024;
+        fileUnit = 'Mb';
+      }
       return (
         <TableRow>
           <TableRowColumn>{file.name}</TableRowColumn>
-          <TableRowColumn>{`${file.size.toFixed(3)}KB`}</TableRowColumn>
+          <TableRowColumn>{fileSize.toFixed(2)+fileUnit}</TableRowColumn>
           <TableRowColumn>{file.uploadTime}</TableRowColumn>
           <TableRowColumn>
             {

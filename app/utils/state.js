@@ -4,23 +4,24 @@ import _ from 'underscore';
 import { readFileMap, storeFileMap } from './file';
 import getSize from 'get-folder-size';
 
-export const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
-export const activityPath = '/home/chouaib/Lynks/lynks-client/ActivityPatterns.txt';
-export const storageDirPath = '/home/chouaib/Lynks/lynks-client/pre_store';
-export const statePath = '/home/chouaib/Lynks/lynks-client/systemFiles/state.json';
+const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
+const activityPath = '/home/chouaib/Lynks/lynks-client/ActivityPatterns.txt';
+const storageDirPath = '/home/chouaib/Lynks/lynks-client/pre_store';
+const statePath = '/home/chouaib/Lynks/lynks-client/systemFiles/state.json';
 
 export const key = 'FOOxxBAR';
 export const NShreds = 10;
 export const parity = 2;
 var targets = 0;
-export const uploadMessage = 'Stored & Secured';
-export const activityParts = 1008;
-export const nowIndex = 700;
-export const minStorageSlider = 0;
-export const maxStorageSlider = Math.pow(10, 6);
-export const powerStorageSlider = 12;
 
-export function readFilesInfo() {
+const uploadMessage = 'Stored & Secured';
+const activityParts = 1008;
+const nowIndex = 700;
+const minStorageSlider = 0;
+const maxStorageSlider = Math.pow(10, 6);
+const powerStorageSlider = 12;
+
+function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
   const filesInfo = [];
   for(var key in fileMap) {
@@ -38,7 +39,7 @@ export function readFilesInfo() {
   return filesInfo;
 }
 
-export function loadActivityPattern(type) { // asynchronouslly loads the Activity Pattern
+function loadActivityPattern(type) { // asynchronouslly loads the Activity Pattern
   const hourlyPatterns = [];
   const averagePatterns = [];
   const hourlyLabels = [];
@@ -67,31 +68,24 @@ export function loadActivityPattern(type) { // asynchronouslly loads the Activit
   }
 }
 
-export function getStorageSpace(){
+function getStorageSpace(){
   const state = JSON.parse(fs.readFileSync(statePath));
-  return state.storage;
+  if(state.hasOwnProperty('storage')) {
+    return state.storage;
+  } else {
+    console.error('Error reading storage field in ' + statePath);
+  }
 }
 
-function getFiles(dir) {
-  dir = dir.replace(/\/$/, '');
-  return _.flatten(fs.readdirSync(dir).map(function(file) {
-    var fileOrDir = fs.statSync([dir, file].join('/'));
-    if (fileOrDir.isFile()) {
-      return (dir + '/' + file).replace(/^\.\/\/?/, '');
-    } else if (fileOrDir.isDirectory()) {
-      return getFiles([dir, file].join('/'));
-    }
-  }));
+function getUsedSpace(){
+  let usedSpace = 0;
+  fs.readdirSync(storageDirPath).map((fileName)=>{
+    usedSpace+=fs.statSync(storageDirPath+'/'+fileName).size;
+  })
+  return usedSpace/1024/1024;
 }
 
-export function getUsedSpace(){
-  var allFiles = getFiles(storageDirPath).map(function(file) {
-    return fs.readFileSync(file);
-  }).join('\n');
-  return (allFiles.length/1024/1024);
-}
-
-export function getStorageInfo(){
+function getStorageInfo(){
 
   const empty = getStorageSpace() - getUsedSpace();
   const used = getUsedSpace();
@@ -99,10 +93,37 @@ export function getStorageInfo(){
   return [empty,used]
 }
 
-export function transform(value) {
+function transform(value) {
   return Math.round((Math.exp(powerStorageSlider * value / maxStorageSlider) - 1) / (Math.exp(powerStorageSlider) - 1) * maxStorageSlider);
 }
 
-export function reverse(value) {
+function reverse(value) {
   return (1 / powerStorageSlider) * Math.log(((Math.exp(powerStorageSlider) - 1) * value / maxStorageSlider) + 1) * maxStorageSlider;
 }
+
+function editStorage(newStorage){
+  const state = JSON.parse(fs.readFileSync(statePath));
+  state.storage = newStorage;
+  fs.writeFileSync(statePath, JSON.stringify(state));
+}
+
+export {
+  editStorage,
+  reverse,
+  transform,
+  getStorageInfo,
+  getUsedSpace,
+  getStorageSpace,
+  loadActivityPattern,
+  readFilesInfo,
+  powerStorageSlider,
+  maxStorageSlider,
+  minStorageSlider,
+  nowIndex,
+  activityParts,
+  uploadMessage,
+  statePath,
+  storageDirPath,
+  activityPath,
+  fileMapPath
+};
