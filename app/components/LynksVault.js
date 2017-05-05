@@ -29,12 +29,9 @@ import Avatar from 'material-ui/Avatar';
 
 const filesButton = {
   padding: 0,
-  width: '48%',
+  height: '100%'
 };
-const filesUpload = {
-  position: 'relative',
-  bottom: '0px'
-};
+
 const iconStyles = {
   marginRight: 20,
 };
@@ -70,23 +67,27 @@ class LynksVault extends Component {
         name: file.name,
         status: 1,
         uploadTime: uploadTime,
-        size: file.size/1000,
+        size: file.size/1024,
       });
     });
     this.setState({ files: files });
   }
 
-  onClickDownload(fileName){
+  onClickDownload(fileID){
     const files = this.state.files.slice();
+    let fileName;
     for(var i in files) {
-      if(files[i].name == fileName) {
+      if(files[i].id == fileID) {
         // call download from file.js
         files[i].status = 0;
+        fileName = files[i].fileName;
         break;
       }
     }
     console.log('OnClickDownload: ');
+    console.log(fileID);
     console.log(files);
+    console.log(files[fileID]);
     this.setState({ files: files, open: true, fileName: fileName });
     console.log(this.state);
   }
@@ -129,14 +130,14 @@ class LynksVault extends Component {
           <TableRowColumn>
             { (file.status == 1) ?
               <FileFileDownload
-                onTouchTap={()=>{this.onClickDownload(file.name)}}
+                onTouchTap={()=>{this.onClickDownload(file.id)}}
                 style={iconStyles}
                 color={green200}
                 hoverColor={greenA700}
               />
               :
               <ActionCheckCircle
-                onTouchTap={()=>{this.onClickDownload(file.name)}}
+                onTouchTap={()=>{this.onClickDownload(file.id)}}
                 style={iconStyles}
                 color={green200}
                 hoverColor={greenA700}
@@ -156,7 +157,7 @@ class LynksVault extends Component {
       <div>
         <Paper className={styles.filespaper} zDepth={1}>
           <Table
-            height='505px'
+            height='518px'
             selectable={false}
           >
             <TableHeader
@@ -179,27 +180,31 @@ class LynksVault extends Component {
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableRowColumn style={{textAlign: 'left'}}>
+                <TableRowColumn colSpan="3" style={{textAlign: 'left'}}>
                     <FlatButton
                       style={filesButton}
                       hoverColor='#FFFFFFF'
                       labelPosition="before"
                       disableTouchRipple={true}
-                      label={`${(filesSize/1000).toFixed(2)}MB Space Used`}
+                      label={`${(filesSize/1024).toFixed(2)}MB Used Space`}
                       secondary={true}
                       icon={<Storage />}
                     />
-                    <FlatButton
-                      style={filesButton}
-                      hoverColor='#FFFFFFF'
-                      label={`${this.state.files.length} Files Uploaded`}
-                      disableTouchRipple={true}
-                      labelPosition="before"
-                      primary={true}
-                      icon={<CloudDone />}
-                    />
-                  <FloatingActionButton style={filesUpload}>
-                    <FileReaderInput id="my-file-input" onChange={this.handleChange}>
+                </TableRowColumn>
+                <TableRowColumn colSpan="3" style={{textAlign: 'left'}}>
+                  <FlatButton
+                    style={filesButton}
+                    hoverColor='#FFFFFFF'
+                    label={`${this.state.files.length} Files Uploaded`}
+                    disableTouchRipple={true}
+                    labelPosition="before"
+                    primary={true}
+                    icon={<CloudDone />}
+                  />
+                </TableRowColumn>
+                <TableRowColumn style={{textAlign: 'right', paddingBottom: '4px'}}>
+                  <FloatingActionButton mini={true} colSpan="3">
+                    <FileReaderInput  onChange={this.handleChange}>
                       <ContentAdd />
                     </FileReaderInput>
                    </FloatingActionButton>

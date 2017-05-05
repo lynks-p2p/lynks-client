@@ -161,10 +161,11 @@
   "dependencies": {
     "bootstrap": "3",
     "bson-objectid": "^1.1.5",
-    "chart.js": "^1.1.1",
+    "chart.js": "^2.5.0",
     "delivery": "^0.0.6",
     "electron-debug": "^1.1.0",
     "font-awesome": "^4.7.0",
+    "get-folder-size": "^1.0.0",
     "kad": "^2.0.0",
     "kad-traverse": "0.0.4",
     "leveldown": "^1.6.0",
@@ -176,6 +177,7 @@
     "react-bootstrap": "^0.30.7",
     "react-cellblock": "^2.0.0",
     "react-chartjs": "^0.8.0",
+    "react-chartjs-2": "^2.0.5",
     "react-dom": "^15.4.2",
     "react-file-reader-input": "^1.1.0",
     "react-redux": "^5.0.2",
@@ -186,7 +188,8 @@
     "redux-thunk": "^2.2.0",
     "reed-solomon": "^3.1.1",
     "shuffle-array": "^1.0.1",
-    "source-map-support": "^0.4.10"
+    "source-map-support": "^0.4.10",
+    "underscore": "^1.8.3"
   },
   "devEngines": {
     "node": ">=6.x",
