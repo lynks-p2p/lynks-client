@@ -17,10 +17,6 @@ const pre_send_path = './pre_send/';
 const pre_store_path = './pre_store/';
 
 
-function getFileList() {
-  return 0;
-}
-
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
     fs.readFile(path, (err, data) => {

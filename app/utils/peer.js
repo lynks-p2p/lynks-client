@@ -19,6 +19,8 @@ const io = require('socket.io')(http);
 let node;
 let remaining_capacity=100;
 
+let my_port;
+
 function initDHT(ip, port, networkID, seed, callback) {
   //MyIp , myID : strings
   //myPort : int, preferably 8080
@@ -96,13 +98,10 @@ function initFileDelivery(port, callback) {
 function initHost( port, networkID, seed, callback) {
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
-
-      console.log('Tracking using the Defaults activityPath');
-
+      my_port=port;
       initSubscribe();      // subscribe to topic for hosting shreds
-
       trackActivityPattern(); // no callback (running function as long as the app is used )
-
+      console.log('Tracking using the Defaults activityPath');
       callback();
     });
   });
@@ -223,7 +222,10 @@ function initSubscribe(){
 
     node.quasarSubscribe('icanhost', (broadcast) => {
         console.log('recieved a broadcast');
-        loadActivityPattern((myactivity)=>{
+        loadActivityPattern((myactivity, error)=>{
+            if(error){
+                return console.error('failed to load activity pattern');
+            }
 
             var mycontent = {
                 ip: ip.address(),
@@ -265,7 +267,7 @@ function getPeers(shredsize, callback){
 
     var broadcast = {
         ip: ip.address(),
-        port: 3000,
+        port: my_port,
         shred_size: shredsize
     }
 
@@ -289,8 +291,8 @@ function getPeers(shredsize, callback){
 
     });
 
-    http.listen(3000, function () {
-      console.log('listening on *:3000');
+    http.listen(my_port, function () {
+      console.log('listening for peer responses...');
     });
 
     setTimeout(()=>{
@@ -303,7 +305,7 @@ function getPeers(shredsize, callback){
     }, 10000);
 }
 
-function getPeerLatency(ip,callback) {
+function getPeerLatency(ip, callback) {
 
   ping.promise.probe(ip, { //configuration
           min_reply: 3, // should be odd number
@@ -361,7 +363,7 @@ function calculateHostAvailability(hostactivity, callback) {            // the f
     callback(counter);
 }
 
-function calculateHostScore(ip, hostactivity, callback, score) {            // the function recieves the host's activity in array form
+function calculateHostScore(ip, hostactivity, callback) {            // the function recieves the host's activity in array form
 
     var score = 0;
 
@@ -412,4 +414,4 @@ function sortHosts(hosts, callback) {
     });
 }
 
-export { node, getPeers, initHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};
+export { node, initSubscribe, getPeers, initHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};
