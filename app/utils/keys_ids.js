@@ -8,6 +8,7 @@ import kad from 'kad';
 
 function generateShredID(callback) { // generateShredID
 
+  //  TODO: Uncomment this
    // const checkUniqueness = (key) => {
    //   retrieveHosts(key, (value) => {
    //     if (value.length != undefined) {
