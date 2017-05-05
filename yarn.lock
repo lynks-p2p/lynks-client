@@ -6974,6 +6974,10 @@ slide@^1.1.5:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/slide/-/slide-1.1.6.tgz#56eb027d65b4d2dce6cb2e2d32c4d4afc9e1d707"
 
+smalloc@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/smalloc/-/smalloc-0.1.0.tgz#d1dec9933316dba667d5f4de861279f1bef97214"
+
 sntp@1.x.x:
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/sntp/-/sntp-1.0.9.tgz#6541184cc90aeea6c6e7b35e2659082443c66198"
