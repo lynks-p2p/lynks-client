@@ -9,7 +9,7 @@ import fs from 'fs';
 import { storeShredRequest, getShredRequest, saveHost, retrieveHosts } from './shred';
 import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
 
-import { node } from './peer';
+import { node, getPeers } from './peer';
 import { getMasterKey,getFileMapKey } from './auth'
 
 const fileMapPath = 'filemap.json';
@@ -199,12 +199,13 @@ function readFileMap(callback) {
     } else {
       fileMap = JSON.parse(fs.readFileSync(fileMapPath));
     }
-    callback(fileMap,null);
+    return callback(fileMap,null);
 
   } catch(error)
    {
       // console.error(error);
-      callback(null,error);
+      console.log(error);
+      return callback(null,error);
   }
 }
 
@@ -242,7 +243,7 @@ function syncFileMap(callback) { // updates the remote FileMap
 
 function addFileMapEntry(fileID, fileMapEntry, callback) {
   readFileMap((fileMap,error) => {
-    if(error) { return callback('error in reading FileMap');  }
+    if(error) { return callback('error in reading FileMap!!!!!!!!!!!!!');  }
     fileMap[fileID]  = fileMapEntry;
     storeFileMap(fileMap, () => {
       callback(null);
@@ -391,19 +392,16 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
 
 function upload(filepath, callback) { //  to upload a file in Lynks
 
-    // call peer.getPeers()
-    // peer selection ^
-
-    //  --------------------fixed,need to change-------------------
-
-  const peerIP='10.7.57.202'
-  const hosts = []
-  for (let f = 0; f < 50; f++)
-  {
-    //10.7.57.202
-    hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
-  }
-  //  --------------------fixed,need to change-------------------
+  //   //  --------------------fixed,need to change-------------------
+  //
+  // const peerIP='10.7.57.202'
+  // const hosts = []
+  // for (let f = 0; f < 50; f++)
+  // {
+  //   //10.7.57.202
+  //   hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+  // }
+  // //  --------------------fixed,need to change-------------------
 
   const NShreds = 10;
   const parity = 2;
@@ -417,77 +415,85 @@ function upload(filepath, callback) { //  to upload a file in Lynks
     }
     console.log ('Done shredding');
 
-    var sentCount = 0; // # of recieved Shreds
-    var lastPeerIdx = 0;
-    var shredsCopy=shredIDs.slice();
-    let shredPeerInfo=[];
 
-    async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
+    // PEER SELECTION!!!!!!!!!!!!!!!!
 
-        const peersToTry = [];
+    var shredsize = file.shardLength;
+    getPeers(shredsize, (hosts)=> {
 
-        for(var i=0; i<shredsCopy.length-sentCount;i++) { // loop on the remanning shredIDs to get New Peers to Try to Upload
-          peersToTry.push(  hosts[ (lastPeerIdx+i) %hosts.length ]  );
-        }
+        var sentCount = 0; // # of recieved Shreds
+        var lastPeerIdx = 0;
+        var shredsCopy=shredIDs.slice();
+        let shredPeerInfo=[];
 
-        //update the lastPeerIdx
-        lastPeerIdx=(lastPeerIdx+shredsCopy.length-sentCount) % hosts.length;
+        async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
 
-        async.eachOf(peersToTry, (val, index, eachOfasyncCallback) =>{ //  loop to upload shreds to peers in parallel
-                const shredToTry=shredsCopy.pop();
-                storeShredRequest(val['ip'], val['port'], shredToTry, pre_send_path, (err) => { // sending to a single Peer
-                 if(err)
-                  {
-                    shredsCopy.push(shredToTry); // roll back your changes
-                    console.error(err);
-                    return eachOfasyncCallback();
-                  }
-                 sentCount++;
-                 console.log(sentCount+'/'+shredIDs.length);
-                 shredPeerInfo.push({shred:shredToTry, id:val['id'] });
-                 eachOfasyncCallback();
+            const peersToTry = [];
+
+            for(var i=0; i<shredsCopy.length-sentCount;i++) { // loop on the remanning shredIDs to get New Peers to Try to Upload
+              peersToTry.push(  hosts[ (lastPeerIdx+i) % hosts.length ]  );
+            }
+
+            //update the lastPeerIdx
+            lastPeerIdx=(lastPeerIdx+shredsCopy.length-sentCount) % hosts.length;
+
+            async.eachOf(peersToTry, (val, index, eachOfasyncCallback) =>{ //  loop to upload shreds to peers in parallel
+                    const shredToTry=shredsCopy.pop();
+                    storeShredRequest(val['ip'], val['port'], shredToTry, pre_send_path, (err) => { // sending to a single Peer
+                     if(err)
+                      {
+                        shredsCopy.push(shredToTry); // roll back your changes
+                        console.error(err);
+                        return eachOfasyncCallback();
+                      }
+                     sentCount++;
+                     console.log(sentCount+'/'+shredIDs.length);
+                     shredPeerInfo.push({shred:shredToTry, id:val['id'] });
+                     eachOfasyncCallback();
+                   });
+
+               }, (err) => {
+                 if(sentCount!=shredIDs.length) console.log('Trying other '+(NShreds-sentCount)+' Peers');
+                 whilst_callback();
                });
+          },
+            ()=> { // test function
+                return sentCount < shredIDs.length ;
+                },
+            (err)=> { // after all shreds are uploaded or error was raised
 
-           }, (err) => {
-             if(sentCount!=shredIDs.length) console.log('Trying other '+(NShreds-sentCount)+' Peers');
-             whilst_callback();
-           });
-      },
-        ()=> { // test function
-            return sentCount < shredIDs.length ;
-            },
-        (err)=> { // after all shreds are uploaded or error was raised
-
-          if(err) { console.error('error in Uploading shreds to Peers !'); return callback(err); }
-          console.log('Done Sending Shreds');
-          console.log(shredPeerInfo);
+              if(err) { console.error('error in Uploading shreds to Peers !'); return callback(err); }
+              console.log('Done Sending Shreds');
+              console.log(shredPeerInfo);
 
 
-                for (var index in shredIDs) { // remove  shreds , async
-                  fs.unlink(pre_send_path + shredIDs[index], () => {});
-                    }
+                    for (var index in shredIDs) { // remove  shreds , async
+                      fs.unlink(pre_send_path + shredIDs[index], () => {});
+                        }
 
-              async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
+                  async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
 
-                // BUG: given a wrong id, empty, it contiues without error
-                saveHost(val['shred'], val['id'], (err,numOfStored) =>{
+                    // BUG: given a wrong id, empty, it contiues without error
+                    saveHost(val['shred'], val['id'], (err,numOfStored) =>{
 
-                  if(err)  {  console.error('error in Uploading shred'+ val['shred'] +'  to DHT !'); return asyncCallback_(err); }
-                  console.log('Shred '+ val['shred'] +', was stored on total nodes of ' + numOfStored);
+                      if(err)  {  console.error('error in Uploading shred'+ val['shred'] +'  to DHT !'); return asyncCallback_(err); }
+                      console.log('Shred '+ val['shred'] +', was stored on total nodes of ' + numOfStored);
 
-                  asyncCallback_();
-                });
+                      asyncCallback_();
+                    });
 
-              }, (err) => { // after all shred-host pairs are uploaded on DHT
+                  }, (err) => { // after all shred-host pairs are uploaded on DHT
 
-                if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
-                console.log('done Uploading shreds to DHT');
+                    if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+                    console.log('done Uploading shreds to DHT');
 
-                callback(null);
-              });
+                    callback(null);
+                  });
 
+            });
         });
     });
+
 }
 
 function download(FileID,callback){  //to upload a file in Lynks
