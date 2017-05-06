@@ -8,22 +8,22 @@ const pin = '12345';
 
 const seed = [
   Buffer.from('THISISTHEBESTBROKER!').toString('hex'),
-  { hostname: '10.40.47.118', port: 1337 } //10.7.57.202
+  { hostname: '192.168.1.4', port: 1337 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
 //signup(userName, pin, (userID) => {
-   login(userName, pin, (err)=>{
+   login(userName, pin, (userID, err)=>{
      console.log('login complete!!!');
-     initHost(myport, 'THISISTHEBESTCLIENT!', seed, () => {
+     initHost(myport, userID, seed, () => {
   //
   //     console.log('\tidentity is ' + node.router.identity.toString('hex'));
   //     console.log('initiating Upload .......');
   //
-            //upload('./Downloads/flash.jpg', (err)=>{
+            upload('./Downloads/flash.jpg', (err)=>{
   // //
   // // //       if(err) console.log('upload Failed ! '+err);
   // // //       else console.log('upload Complete !');
-        // });
+         });
   //
   //   });
   // syncFileMap(()=>{});

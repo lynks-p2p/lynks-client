@@ -15,7 +15,7 @@ import { getMasterKey, getFileMapKey, getUserName, getUserID } from './auth'
 const fileMapPath = 'filemap.json';
 const pre_send_path = './pre_send/';
 const pre_store_path = './pre_store/';
-var baseURL = 'http://10.40.47.118:4040/api/users/update_filemap';
+var baseURL = 'http://192.168.1.4:4040/api/users/update_filemap';
 
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
@@ -421,12 +421,12 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
     //  --------------------fixed,need to change-------------------
 
-  const peerIP='10.40.47.118'
+  const peerIP='192.168.1.4'
   const hosts = []
   for (let f = 0; f < 30; f++)
   {
     //10.7.57.202
-    hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+    hosts.push({ ip: peerIP, port: 8080, id: Buffer.from('THISISTHEBESTBROKER!').toString('hex') })
   }
 
   // for (let f = 0; f < 15; f++)

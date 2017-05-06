@@ -36,7 +36,7 @@ function initDHT(ip, port, networkID, seed, callback) {
     transport: new kad.UDPTransport(),
     storage: levelup('./DHT_Storage/'),
     contact: { hostname: ip , port: port },
-    identity: Buffer.from(networkID)
+    identity: Buffer.from(networkID, 'hex')
   });
 
 

@@ -1,12 +1,11 @@
 import { createFileMap, readFileMap, encryptFileMap, decryptFileMap, getRemoteFileMap, fileToBuffer } from './file';
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
-import SHA1 from 'crypto-js/sha1';
 import crypto from 'crypto';
 import request from 'request';
 const fileMapPath = 'filemap.json';
 
 var masterKey, userID, pin, fileMapKey, userName;
-var baseURL = 'http://10.40.47.118:4040/api/users/';
+var baseURL = 'http://192.168.1.4:4040/api/users/';
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
 
