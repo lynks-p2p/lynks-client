@@ -13,10 +13,12 @@ import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
 import { node } from './peer';
 import { getMasterKey,getFileMapKey } from './auth'
 
-const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
-export const pre_send_path = '/home/chouaib/Lynks/lynks-client/pre_send/';
-const pre_store_path = '/home/chouaib/Lynks/lynks-client/pre_store/';
-const downloadsPath = '/home/chouaib/Lynks/lynks-client/Downloads/';
+import {
+  fileMapPath,
+  NShreds,
+  parity,
+  pre_send_path
+} from './ENV_variables';
 
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {

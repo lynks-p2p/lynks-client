@@ -3,23 +3,14 @@ import fs from 'fs';
 import _ from 'underscore';
 import { readFileMap, storeFileMap } from './file';
 import getSize from 'get-folder-size';
-
-const fileMapPath = '/home/chouaib/Lynks/lynks-client/systemFiles/filemap.json';
-const activityPath = '/home/chouaib/Lynks/lynks-client/ActivityPatterns.txt';
-const storageDirPath = '/home/chouaib/Lynks/lynks-client/pre_store';
-const statePath = '/home/chouaib/Lynks/lynks-client/systemFiles/state.json';
-
-export const key = 'FOOxxBAR';
-export const NShreds = 10;
-export const parity = 2;
-var targets = 0;
-
-const uploadMessage = 'Stored & Secured';
-const activityParts = 1008;
-const nowIndex = 700;
-const minStorageSlider = 0;
-const maxStorageSlider = Math.pow(10, 6);
-const powerStorageSlider = 12;
+import {
+  fileMapPath,
+  activityPath,
+  statePath,
+  storageDirPath,
+  powerStorageSlider,
+  maxStorageSlider
+} from './ENV_variables';
 
 function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
@@ -39,6 +30,7 @@ function readFilesInfo() {
   return filesInfo;
 }
 
+// need CHANGED make reading from json not txt
 function loadActivityPattern(type) { // asynchronouslly loads the Activity Pattern
   const hourlyPatterns = [];
   const averagePatterns = [];
@@ -80,7 +72,9 @@ function getStorageSpace(){
 function getUsedSpace(){
   let usedSpace = 0;
   fs.readdirSync(storageDirPath).map((fileName)=>{
-    usedSpace+=fs.statSync(storageDirPath+'/'+fileName).size;
+    if(fs.statSync(storageDirPath+'/'+fileName)){
+      usedSpace+=fs.statSync(storageDirPath+'/'+fileName).size;
+    }
   })
   return usedSpace/1024/1024;
 }
@@ -116,14 +110,4 @@ export {
   getStorageSpace,
   loadActivityPattern,
   readFilesInfo,
-  powerStorageSlider,
-  maxStorageSlider,
-  minStorageSlider,
-  nowIndex,
-  activityParts,
-  uploadMessage,
-  statePath,
-  storageDirPath,
-  activityPath,
-  fileMapPath
 };

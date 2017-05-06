@@ -13,13 +13,20 @@ import async from 'async'
 import { bufferToFile } from './file'
 import { sendShredHandler, getShredHandler } from './shred';
 
+import {
+  storageDirPath,
+  activityPath,
+  activityDays,
+  deltaMinutes
+} from './ENV_variables';
+
 const quasar = require('kad-quasar');
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 let node;
-let remaining_capacity=100;
+let remaining_capacity=100; // CHANGED replace with getStorageInfo()
 
 let my_port;
 
@@ -70,7 +77,7 @@ function initFileDelivery(port, callback) {
   const io  = socketio.listen(port);
   // console.log('listening: '+ ip);
 
-  const shredsStoredPath = './Storage/';
+  const shredsStoredPath = storageDirPath+'/';
 
   io.sockets.on('connection', (socket) => {
     console.log('connected');
@@ -320,8 +327,8 @@ function getPeerLatency(ip, callback) {
 }
 
 function calculateMatching(hostactivity, callback) {  // the function recieves the host's activity in array form  const deltaMinutes =  10; it update activity every 10 min
-  const activityDays =  7; // activity for 1 week
-  const activityPath = 'ActivityPattern.json';
+  // const activityDays =  7; // activity for 1 week  ===> Now ENV variable
+  // const activityPath = 'ActivityPattern.json';  ===> Now ENV variable
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -349,8 +356,8 @@ function calculateMatching(hostactivity, callback) {  // the function recieves t
 }
 
 function calculateHostAvailability(hostactivity, callback) {            // the function recieves the host's activity in array form
-    const deltaMinutes =  10; // update activity every 10 min
-    const activityDays =  7; // activity for 1 week
+    // const deltaMinutes =  10; // update activity every 10 min  ===> Now ENV variable
+    // const activityDays =  7; // activity for 1 week  ===> Now ENV variable
 
     //calculated variables
     const partsPerHour = Math.ceil(60/deltaMinutes);
