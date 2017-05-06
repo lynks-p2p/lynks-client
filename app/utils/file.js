@@ -19,7 +19,8 @@ import {
   parity,
   pre_send_path,
   pre_store_path,
-  downloadsDirPath
+  downloadsDirPath,
+  encryptedFileMapPath
 } from './ENV_variables';
 
 function fileToBuffer(path, callback) {
@@ -220,8 +221,7 @@ function getFileMap(callback) { //  gets FileMap from boker & decrypts FileMap
   // TODO: if failed, you need to check for existing local FileMap and use it instead
   // optimization for future: only get hash of FileMap to check if local FileMap is up-to-date
 
-  const fileName='encryptedFileMap';
-  decryptFileMap(fileName,()=>{
+  decryptFileMap(encryptedFileMapPath,()=>{
     readFileMap((fileMap,error)=>{
       if(error) {
           fs.unlink(fileMapPath, () => {});
@@ -237,7 +237,7 @@ function getFileMap(callback) { //  gets FileMap from boker & decrypts FileMap
 }
 
 function syncFileMap(callback) { // updates the remote FileMap
-  encryptFileMap('encryptedFileMap',()=>{
+  encryptFileMap(encryptedFileMapPath,()=>{
     callback();
   });
 
@@ -496,7 +496,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                     if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
                     console.log('Done Uploading shreds to DHT');
                     console.log('Updating the encryptFileMap');
-                    encryptFileMap('encryptedFileMap',()=>{
+                    encryptFileMap(encryptedFileMapPath,()=>{
                       callback(null);
                     })
 

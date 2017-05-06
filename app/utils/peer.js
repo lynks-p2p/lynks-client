@@ -15,7 +15,7 @@ import { sendShredHandler, getShredHandler } from './shred';
 
 import {
   storageDirPath,
-  activityPath,
+  activityPatternPath,
   activityDays,
   deltaMinutes
 } from './ENV_variables';
@@ -119,7 +119,7 @@ function initHost( port, networkID, seed, callback) {
 }
 
 function loadActivityPattern(callback,activityPath) { // asynchronouslly loads the Activity Pattern
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   try {
     // load Activity Pattern from disk
@@ -141,7 +141,7 @@ function createActivityPatternFile(callback,deltaMinutes, activityDays, activity
   // Defaults :
   deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
   activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -163,7 +163,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   // Defaults :
   deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
   activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -340,7 +340,7 @@ function calculateMatching(hostactivity, callback) {  // the function recieves t
   const partsPerDay  = Math.ceil(24*60/deltaMinutes);
   const activityParts = Math.ceil(activityDays * partsPerDay)
 
-  if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
+  if( fs.existsSync(activityPatternPath) ) //use the existing the Activity Pattern
   {
 
     loadActivityPattern((activity)=>{
@@ -356,7 +356,7 @@ function calculateMatching(hostactivity, callback) {  // the function recieves t
     });
   } else {  //  Activity Pattern File doesn't exit
 
-    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
+    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPatternPath);
   }
 }
 

@@ -5,13 +5,14 @@ import { readFileMap, storeFileMap } from './file';
 import getSize from 'get-folder-size';
 import {
   fileMapPath,
-  activityPath,
+  activityPatternPath,
   statePath,
   storageDirPath,
   powerStorageSlider,
   maxStorageSlider
 } from './ENV_variables';
 
+// to be CHANGED don't real all fileMapEntries
 function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
   const filesInfo = [];

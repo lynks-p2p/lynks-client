@@ -19,6 +19,7 @@ import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/style
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
+import { loginCall } from '../../upload';
 
 const textfield = {
   marginLeft: 20,
@@ -64,7 +65,9 @@ export default class Home extends Component {
     };
   }
   handleLogin = () => {
-    this.setState({...this.state, logged:true});
+    loginCall(()=>{
+      this.setState({...this.state, logged:true});
+    });
   }
   handleSignUp = () => {
     this.setState({...this.state, logged:true});

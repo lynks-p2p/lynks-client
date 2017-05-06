@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { readFileMap,encryptFileMap,decryptFileMap, getFileMap } from './file';
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 
@@ -72,4 +74,4 @@ function getFileMapKey () { // gets the MasterKey
   return fileMapKey;
 }
 
-export { login, signup, getUserID, getPin, getMasterKey,getFileMapKey, setUserID, setPin, setMasterKey };
+export { login, signup, getUserID, getPin, getMasterKey, getFileMapKey, setFileMapKey, setUserID, setPin, setMasterKey };

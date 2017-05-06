@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import kad from 'kad';
 import dl from 'delivery';
 import fs from 'fs';
