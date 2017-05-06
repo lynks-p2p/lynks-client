@@ -110,9 +110,9 @@ function initHost( port, networkID, seed, callback) {
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
       my_port=port;
-      initSubscribe();      // subscribe to topic for hosting shreds
+      initSubscribe(my_port);      // subscribe to topic for hosting shreds
       trackActivityPattern(); // no callback (running function as long as the app is used )
-      console.log('Tracking using the Defaults activityPath');
+      // console.log('Tracking using the Defaults activityPath');
       callback();
     });
   });
@@ -172,9 +172,9 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   var the_interval = deltaMinutes * 60 * 1000;
 
   // console.log('Successfuly load of the Activity Pattern !');
-  console.log('\tActivityParts = '+ activityParts);
-  console.log('\tPartsPerDay = '+ partsPerDay);
-  console.log('\tPartsPerHour = '+ partsPerHour);
+  // console.log('\tActivityParts = '+ activityParts);
+  // console.log('\tPartsPerDay = '+ partsPerDay);
+  // console.log('\tPartsPerHour = '+ partsPerHour);
   console.log('-------------------- Tracking Activity Pattern --------------------');
   console.log(new Date().toString());
 
@@ -228,7 +228,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
 
 }
 
-function initSubscribe(){
+function initSubscribe(port){
     node.plugin(quasar);
 
     node.quasarSubscribe('icanhost', (broadcast) => {
@@ -280,7 +280,7 @@ function getPeers(shredsize, callback){
 
     var broadcast = {
         ip: ip.address(),
-        port: my_port,
+        port: my_port+1,
         shred_size: shredsize
     }
 
@@ -304,7 +304,7 @@ function getPeers(shredsize, callback){
 
     });
 
-    http.listen(my_port, function () {
+    http.listen(my_port+1, function () {
       console.log('listening for peer responses...');
     });
 
@@ -331,6 +331,7 @@ function getPeerLatency(ip, callback) {
 }
 
 function calculateMatching(hostactivity, callback) {  // the function recieves the host's activity in array form  const deltaMinutes =  10; it update activity every 10 min
+
   // const activityDays =  7; // activity for 1 week  ===> Now ENV variable
   // const activityPath = 'ActivityPattern.json';  ===> Now ENV variable
 
