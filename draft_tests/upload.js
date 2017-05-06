@@ -9,6 +9,7 @@ const pin = '12345';
 const seed = [
   Buffer.from('ISTHISEVENABROKERYO?').toString('hex'),
   { hostname: '192.168.1.6', port: 8080 } //10.7.57.202
+
 ];
 // console.log(require('buffer').kMaxLength);
 signup(userName, pin, (userID) => {

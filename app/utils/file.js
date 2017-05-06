@@ -8,8 +8,14 @@ import fs from 'fs';
 import request from 'request'
 import { storeShredRequest, getShredRequest, saveHost, retrieveHosts } from './shred';
 import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
+<<<<<<< HEAD
 import { node, getPeers } from './peer';
 import { getMasterKey, getFileMapKey, getUserName, getUserID } from './auth'
+=======
+
+import { node, getPeers } from './peer';
+import { getMasterKey,getFileMapKey } from './auth'
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
 
 const fileMapPath = 'filemap.json';
 const pre_send_path = './pre_send/';
@@ -180,14 +186,32 @@ function createFileMap(callback) {
 function encryptFileMap(callback) { //encrypts the fileMap and writes it on disk and returns the name of the encrypted Filename
   fileToBuffer(fileMapPath,(data, err)=>{
     encrypt(data, getFileMapKey(),(buffer)=>{
+<<<<<<< HEAD
       return callback(buffer);
+=======
+      bufferToFile(fileName, buffer,()=>{
+        console.log('\tAn encrypted FileMap file was created');
+        callback(fileName);
+      });
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
     });
   });
 }
 
+<<<<<<< HEAD
 function decryptFileMap(data, callback) { //decreypts and replaces if exist the existing filemap
   decrypt(data, getFileMapKey() ,(buffer)=>{
     callback(buffer);
+=======
+function decryptFileMap(fileName,callback) { //decreypts and replaces if exist the existing filemap
+  fileToBuffer(fileName,(data)=>{
+    decrypt(data, getFileMapKey() ,(buffer)=>{
+      bufferToFile('filemap.json', buffer,()=>{ // replace the old
+        console.log('\tDecrypted FileMap file');
+        callback();
+      });
+    });
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
   });
 }
 function readFileMapBuffer(fileMapBuffer, callback) {
@@ -226,6 +250,7 @@ function getRemoteFileMap(remoteData, callback) { //  gets FileMap from boker & 
       if(err) {
          return callback(null,'Failed to decrypt remote FileMap');
        }
+<<<<<<< HEAD
       readFileMap((fileMap, error)=>{
         if(error) {
           console.log(error);
@@ -247,6 +272,10 @@ function getRemoteFileMap(remoteData, callback) { //  gets FileMap from boker & 
            return callback(fileMap,null);
          }
       });
+=======
+      console.log('\tSuccessfully retrieved & decrypted the remote fileMap');
+      callback(fileMap,null);
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
     });
   });
 }
@@ -419,6 +448,19 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
 
 function upload(filepath, callback) { //  to upload a file in Lynks
 
+<<<<<<< HEAD
+=======
+  //   //  --------------------fixed,need to change-------------------
+  // const peerIP='192.168.1.13'
+  // const hosts = []
+  // for (let f = 0; f < 50; f++)
+  // {
+  //   //10.7.57.202
+  //   hosts.push({ ip: peerIP, port: 2345, id: Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex') })
+  // }
+  // //  --------------------fixed,need to change-------------------
+
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
   const NShreds = 10;
   const parity = 2;
 
@@ -485,6 +527,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                     for (var index in shredIDs) { // remove  shreds , async
                       fs.unlink(pre_send_path + shredIDs[index], () => {});
                         }
+<<<<<<< HEAD
 
                   console.log('Uploading shreds to DHT');
                   async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
@@ -495,11 +538,24 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                       if(err)  {  console.error('error in Uploading shred'+ val['shred'] +'  to DHT !'); return asyncCallback_(err); }
                       console.log('\tShred '+ val['shred'] +', was stored on total nodes of ' + numOfStored);
 
+=======
+
+                  console.log('Uploading shreds to DHT');
+                  async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
+
+                    // BUG: given a wrong id, empty, it contiues without error
+                    saveHost(val['shred'], val['id'], (err,numOfStored) =>{
+
+                      if(err)  {  console.error('error in Uploading shred'+ val['shred'] +'  to DHT !'); return asyncCallback_(err); }
+                      console.log('\tShred '+ val['shred'] +', was stored on total nodes of ' + numOfStored);
+
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
                       asyncCallback_();
                     });
 
                   }, (err) => { // after all shred-host pairs are uploaded on DHT
 
+<<<<<<< HEAD
                     if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err);
                   }else {
                   addFileMapEntry(fileID, file, (err) => {
@@ -528,6 +584,21 @@ function upload(filepath, callback) { //  to upload a file in Lynks
       });
     });
   });
+=======
+                    if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err); }
+                    console.log('Done Uploading shreds to DHT');
+                    console.log('Updating the encryptFileMap');
+                    encryptFileMap('encryptedFileMap',()=>{
+                      callback(null);
+                    })
+
+                  });
+
+            });
+        });
+    });
+
+>>>>>>> 4a5f5a7944f58a6833c08d985cecb727b3e8c064
 }
 
 function download(FileID,callback){  //to upload a file in Lynks

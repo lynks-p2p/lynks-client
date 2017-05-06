@@ -38,7 +38,6 @@ function signup(userName, pin, callback) { // sign up request to get unique user
   });
 }
 
-
 function login(userName, pin, callback) { // login request to get the fileMap from the broker
   console.log('Authenticating ...');
   const requestURL = baseURL + 'signin';
