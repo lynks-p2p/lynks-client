@@ -17,7 +17,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 let node;
-let remaining_capacity=100;
+let remaining_capacity=100*1024*1024; // 100 MB
 
 let my_port;
 
@@ -101,7 +101,7 @@ function initHost( port, networkID, seed, callback) {
       my_port=port;
       initSubscribe(my_port);      // subscribe to topic for hosting shreds
       trackActivityPattern(); // no callback (running function as long as the app is used )
-      console.log('Tracking using the Defaults activityPath');
+      // console.log('Tracking using the Defaults activityPath');
       callback();
     });
   });
@@ -161,9 +161,9 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   var the_interval = deltaMinutes * 60 * 1000;
 
   // console.log('Successfuly load of the Activity Pattern !');
-  console.log('\tActivityParts = '+ activityParts);
-  console.log('\tPartsPerDay = '+ partsPerDay);
-  console.log('\tPartsPerHour = '+ partsPerHour);
+  // console.log('\tActivityParts = '+ activityParts);
+  // console.log('\tPartsPerDay = '+ partsPerDay);
+  // console.log('\tPartsPerHour = '+ partsPerHour);
   console.log('-------------------- Tracking Activity Pattern --------------------');
   console.log(new Date().toString());
 

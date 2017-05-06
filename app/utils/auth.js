@@ -15,12 +15,13 @@ function signup(userID, callback) { // sign up request to get unique userID from
 
 function login(userID, pin, callback) { // login request to get the fileMap from the broker
 
+  console.log('Authenticating ...');
   //  user's inputs
   setUserID(userID);
   setPin(pin);
 
   generateFileMapKey(userID, pin, (fileMapKey) => { //generate the fileMapKey
-    console.log('\tfile map key generated!\t'+fileMapKey);
+    // console.log('\tfile map key generated!\t'+fileMapKey);
     setFileMapKey(fileMapKey);
 
     getFileMap((fileMap,error)=>{// generate the rest of keys using the remote fileMap
@@ -28,8 +29,8 @@ function login(userID, pin, callback) { // login request to get the fileMap from
 
       generateMasterKey(fileMapKey, fileMap['rnd'], (mKey) => {
 
-        console.log('\tmaster key generated!\t'+mKey);
-        console.log('Authentication complete! Welcome back '+userID);
+        // console.log('\tmaster key generated!\t'+mKey);
+        console.log('\tAuthentication Complete! Welcome back '+userID);
 
         setMasterKey (mKey);
         callback(null);

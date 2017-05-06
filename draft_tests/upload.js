@@ -8,7 +8,7 @@ const pin = '12345';
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: '10.7.57.202', port: 2345 } //10.7.57.202
+  { hostname: '10.7.57.202', port: 8080 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
 signup(user_ID, (userID) => {
@@ -17,11 +17,11 @@ signup(user_ID, (userID) => {
     initHost(myport, userID, seed, () => {
 
       console.log('\tidentity is ' + node.router.identity.toString('hex'));
-      console.log('initiating Upload .......');
+      console.log('==================> Initiating Upload <==================');
 
-      upload('/Users/ahmadadel/Desktop/Github/lynks-client/erb-logo.png', (err)=>{
+      upload('/home/yehia/Desktop/auc.jpg', (err)=>{
         if(err) console.log('upload Failed ! '+err);
-        else console.log('upload Complete !');
+        else console.log('Upload Complete !');
       });
 
     });
