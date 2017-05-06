@@ -1,16 +1,19 @@
 /* eslint-disable */
-const basePath = '/home/chouaib/Lynks';
 
-const pre_send_path = basePath + '/lynks-client/pre_send/';
-const pre_store_path = basePath + '/lynks-client/pre_store/';
-const downloadsDirPath = basePath + '/lynks-client/Downloads';
-const storageDirPath = basePath + '/lynks-client/Storage';
+import path from 'path';
 
-const fileMapPath = basePath + '/lynks-client/systemFiles/filemap.json';
-const encryptedFileMapPath = basePath + '/lynks-client/systemFiles/encryptedfilemap';
-const statePath = basePath + '/lynks-client/systemFiles/state.json';
+const basePath = path.resolve('./') + '/';
 
-const activityPatternPath = basePath + '/lynks-client/systemFiles/ActivityPattern.json';
+const pre_send_path = basePath + 'pre_send';
+const pre_store_path = basePath + 'pre_store';
+const downloadsDirPath = basePath + 'Downloads';
+const storageDirPath = basePath + 'Storage';
+
+const fileMapPath = basePath + 'systemFiles/filemap.json';
+const statePath = basePath + 'systemFiles/state.json';
+
+const activityPath = basePath + 'systemFiles/ActivityPattern.json';
+
 const deltaMinutes =  10; // update activity every 10 min
 const activityDays =  7; // activity for 1 week
 const activityParts = 1008;
