@@ -9,8 +9,8 @@ import styles from './LynksVault.css';
 import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
-import {readFilesInfo, loadActivityPattern, fileMapPath, uploadMessage} from '../utils/state';
-import {shredFile, removeFileMapEntry, pre_send_path} from '../utils/file';
+import {readFilesInfo, loadActivityPattern} from '../utils/state';
+import {shredFile, removeFileMapEntry} from '../utils/file';
 import FileFileDownload from 'material-ui/svg-icons/file/file-download';
 import ActionDeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import ActionCheckCircle from 'material-ui/svg-icons/action/check-circle';
@@ -26,6 +26,12 @@ import CloudDone from 'material-ui/svg-icons/file/cloud-done';
 import Storage from 'material-ui/svg-icons/device/storage';
 import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
+
+import {
+  uploadMessage,
+  fileMapPath,
+  pre_send_path
+} from '../utils/ENV_variables';
 
 const filesButton = {
   padding: 0,
