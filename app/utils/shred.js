@@ -50,13 +50,13 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
   const delivery = dl.listen(socket);
   delivery.connect();
   delivery.on('delivery.connect', (delivery) => {
-    let filepath = shredsPath + shredID;
-    let stats = fs.statSync(filepath);
-    if (currentUploadSize > maxUploadSize){
-      console.log('too much!');
-      socket.emit('shred_retrieve_fail');
-    }
-    currentUploadSize += stats.size;
+     let filepath = shredsPath + shredID;
+    // let stats = fs.statSync(filepath);
+    // if (currentUploadSize > maxUploadSize){
+    //   console.log('too much!');
+    //   socket.emit('shred_retrieve_fail');
+    // }
+    // currentUploadSize += stats.size;
     if (fs.existsSync(filepath)) {
       delivery.send({
         name: shredID,
@@ -67,7 +67,7 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
       socket.emit('shred_retrieve_fail');
     }
     delivery.on('send.success', () => {
-      currentUploadSize -= stats.size;
+      // currentUploadSize -= stats.size;
       console.log('\tA shred was sent successfully!' + ind++);
       return callback(null);
     });
@@ -76,18 +76,17 @@ function sendShredHandler(socket, shredID, shredsPath, callback) { // setup for 
 
 function getShredHandler(socket, shredID, shredsPath, callback) { // setup for recieving shreds
   // console.log('listening to receive ...');
-  if (currentDownloadSize > maxDownloadSize ){
-    socket.emit('shred_retrieve_fail');
-  }
+  // if (currentDownloadSize > maxDownloadSize ){
+  //   socket.emit('shred_retrieve_fail');
+  // }
   const delivery = dl.listen(socket);
-
+  // currentDownloadSize += stats.size;
   delivery.on('receive.success', (shred) => {
-    let filepath = shredsPath + shredID;
-    let stats = fs.statSync(filepath);
-    currentDownloadSize += stats.size;
     fs.writeFile(shredsPath + shred.name, shred.buffer, (err) => {
       socket.disconnect();
-      currentDownloadSize -= stats.size;
+      // let filepath = shredsPath + shred.name;
+      // let stats = fs.statSync(filepath);
+      // currentDownloadSize -= stats.size;
       if (err) {
         console.log('\tshred could not be saved: ' + err);
         return callback(err);
@@ -108,9 +107,9 @@ function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a 
    });
   socket.emit('store_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      // console.log('\tfailed to retrieve a shred '+shredID);
+      // console.log('\tfailed to retrieve shred '+shredID);
       socket.disconnect();
-      return callback('\tfailed to retrieve a shred '+shredID);
+      return callback('\tfailed to retrieve shred '+shredID);
    });
   // steup for sending shreds
   sendShredHandler(socket, shredID, shredsPath, (err) => {
@@ -128,9 +127,9 @@ function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a 
    });
   socket.emit('retrieve_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      // console.log('\tfailed to retrieve a shred '+shredID);
+      // console.log('\tfailed to retrieve shred '+shredID);
       socket.disconnect();
-      return callback('\tfailed to retrieve a shred '+shredID);
+      return callback('\tfailed to retrieve shred '+shredID);
    });
   // steup for recieving shreds
   getShredHandler(socket, shredID, shredsPath, (err) => {
