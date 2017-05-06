@@ -1,6 +1,5 @@
 import { createFileMap, readFileMap, encryptFileMap, decryptFileMap, getRemoteFileMap, fileToBuffer } from './file';
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
-import SHA1 from 'crypto-js/sha1';
 import crypto from 'crypto';
 import request from 'request';
 const fileMapPath = 'filemap.json';
