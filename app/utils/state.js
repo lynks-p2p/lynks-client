@@ -35,7 +35,7 @@ function loadActivityPattern(type) { // asynchronouslly loads the Activity Patte
   const hourlyPatterns = [];
   const averagePatterns = [];
   const hourlyLabels = [];
-  const activityPatternObject = JSON.parse(fs.readFileSync(activityPath));
+  const activityPatternObject = JSON.parse(fs.readFileSync(activityPatternPath));
   const patterns =
         (activityPatternObject.hasOwnProperty("Pattern"))
         ?
