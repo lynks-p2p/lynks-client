@@ -30,7 +30,6 @@ function readFilesInfo() {
   return filesInfo;
 }
 
-// need CHANGED make reading from json not txt
 function loadActivityPattern(type) { // asynchronouslly loads the Activity Pattern
   const hourlyPatterns = [];
   const averagePatterns = [];
