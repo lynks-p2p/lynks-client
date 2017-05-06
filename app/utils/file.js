@@ -17,7 +17,8 @@ import {
   fileMapPath,
   NShreds,
   parity,
-  pre_send_path
+  pre_send_path,
+  pre_store_path
 } from './ENV_variables';
 
 function fileToBuffer(path, callback) {
