@@ -108,9 +108,9 @@ function storeShredRequest(ip, port, shredID, shredsPath, callback) { // send a 
    });
   socket.emit('store_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      // console.log('\tfailed to retrieve a shred '+shredID);
+      // console.log('\tfailed to retrieve shred '+shredID);
       socket.disconnect();
-      return callback('\tfailed to retrieve a shred '+shredID);
+      return callback('\tfailed to retrieve shred '+shredID);
    });
   // steup for sending shreds
   sendShredHandler(socket, shredID, shredsPath, (err) => {
@@ -128,9 +128,9 @@ function getShredRequest(ip, port, shredID, shredsPath, callback) {// receive a 
    });
   socket.emit('retrieve_shred', { shredID });
   socket.on('shred_retrieve_fail', function() {
-      // console.log('\tfailed to retrieve a shred '+shredID);
+      // console.log('\tfailed to retrieve shred '+shredID);
       socket.disconnect();
-      return callback('\tfailed to retrieve a shred '+shredID);
+      return callback('\tfailed to retrieve shred '+shredID);
    });
   // steup for recieving shreds
   getShredHandler(socket, shredID, shredsPath, (err) => {

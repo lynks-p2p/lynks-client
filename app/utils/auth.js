@@ -78,6 +78,7 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
   );
 }
 
+
 function setUserName (uName) { // Sets the userID
   userName = uName;
 }
