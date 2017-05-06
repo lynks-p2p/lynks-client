@@ -8,17 +8,6 @@ import Paper from 'material-ui/Paper';
 import styles from './LynksVault.css';
 import {Line} from 'react-chartjs-2';
 import {Doughnut} from 'react-chartjs-2';
-import {
-  maxStorageSlider,
-  minStorageSlider,
-  transform,
-  reverse,
-  loadActivityPattern,
-  getStorageInfo,
-  getUsedSpace,
-  editStorage,
-  getFiles1
-} from '../utils/state';
 import Refresh from 'material-ui/svg-icons/navigation/refresh';
 import Settings from 'material-ui/svg-icons/action/settings';
 import DonutSmall from 'material-ui/svg-icons/action/donut-small';
@@ -29,7 +18,19 @@ import getSize from 'get-folder-size';
 import Dialog from 'material-ui/Dialog';
 import Slider from 'material-ui/Slider';
 
+import {
+  transform,
+  reverse,
+  loadActivityPattern,
+  getStorageInfo,
+  getUsedSpace,
+  editStorage
+} from '../utils/state';
 
+import {
+  maxStorageSlider,
+  minStorageSlider,
+} from '../utils/ENV_variables';
 
 class LynksDrive extends Component {
 

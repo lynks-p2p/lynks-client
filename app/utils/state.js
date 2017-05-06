@@ -35,8 +35,13 @@ function loadActivityPattern(type) { // asynchronouslly loads the Activity Patte
   const hourlyPatterns = [];
   const averagePatterns = [];
   const hourlyLabels = [];
-  const f = fs.readFileSync(activityPath);
-  const patterns = f.toString().split(',');
+  const activityPatternObject = JSON.parse(fs.readFileSync(activityPath));
+  const patterns =
+        (activityPatternObject.hasOwnProperty("Pattern"))
+        ?
+        activityPatternObject["Pattern"]
+        :
+        [];
   let sum = 0;
   for (var i=0; i<patterns.length; i++){
     sum +=parseInt(patterns[i]);
