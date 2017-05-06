@@ -204,6 +204,7 @@ function readFileMap(callback) {
         });
     } else {
       fileMap = JSON.parse(fs.readFileSync(fileMapPath));
+      console.log('LOLZ');
     }
     return callback(fileMap,null);
 
@@ -224,7 +225,8 @@ function getFileMap(callback) { //  gets FileMap from boker & decrypts FileMap
   decryptFileMap(encryptedFileMapPath,()=>{
     readFileMap((fileMap,error)=>{
       if(error) {
-          fs.unlink(fileMapPath, () => {});
+          // fs.unlink(fileMapPath, () => {});
+          console.log(error)
          return callback(null,'Failed to decrypt remote FileMap');
        }
       console.log('\tSuccessfully retrieved & decrypted the remote fileMap');

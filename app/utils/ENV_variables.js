@@ -10,9 +10,10 @@ const downloadsDirPath = basePath + 'Downloads';
 const storageDirPath = basePath + 'Storage';
 
 const fileMapPath = basePath + 'systemFiles/filemap.json';
+const encryptedFileMapPath = basePath + 'systemFiles/encryptedfilemap';
 const statePath = basePath + 'systemFiles/state.json';
 
-const activityPath = basePath + 'systemFiles/ActivityPattern.json';
+const activityPatternPath = basePath + 'systemFiles/ActivityPattern.json';
 
 const deltaMinutes =  10; // update activity every 10 min
 const activityDays =  7; // activity for 1 week
