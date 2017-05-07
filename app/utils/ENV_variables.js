@@ -3,6 +3,7 @@
 import path from 'path';
 
 const basePath = path.resolve('./') + '/';
+const brokerURL = 'http://192.168.1.4:4040/api/users/';
 
 const pre_send_path = basePath + 'pre_send/';
 const pre_store_path = basePath + 'pre_store/';
@@ -12,7 +13,6 @@ const storageDirPath = basePath + 'Storage';
 const fileMapPath = basePath + 'systemFiles/filemap.json';
 const encryptedFileMapPath = basePath + 'systemFiles/encryptedfilemap';
 const statePath = basePath + 'systemFiles/state.json';
-
 const activityPatternPath = basePath + 'systemFiles/ActivityPattern.json';
 
 const deltaMinutes =  10; // update activity every 10 min

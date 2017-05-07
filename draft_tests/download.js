@@ -5,7 +5,7 @@ import {upload,download,readFileMap } from '../app/utils/file';
 import { signup,login } from '../app/utils/auth'
 
 const myport = 8080;
-const user_ID = 'YEHIA_HESHAM_CHOUAIB';
+const userName = 'YEHIA_HESHAM_CHOUAIB';
 const pin = '12345';
 
 const seed = [
@@ -14,7 +14,7 @@ const seed = [
 ];
 
 export function singupCall (callback) {
-  login(user_ID, pin, (err)=>{
+  login(userName, pin, (userID,err)=>{
     if(err){  return console.error(err);  }
     initHost(myport, user_ID, seed, () => {
       console.log('\tidentity is ' + node.router.identity.toString('hex'));
@@ -30,7 +30,7 @@ export function singupCall (callback) {
             callback();
           }
         });
-      });
+      //});
     });
   });
 }

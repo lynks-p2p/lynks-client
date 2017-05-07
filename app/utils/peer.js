@@ -52,7 +52,7 @@ function initDHT(ip, port, networkID, seed, callback) {
     transport: new kad.UDPTransport(),
     storage: new KadLocalStorage('storage'),
     contact: { hostname: ip , port: port },
-    identity: Buffer.from(networkID)
+    identity: Buffer.from(networkID, 'hex')
   });
 
 
@@ -112,6 +112,7 @@ function initFileDelivery(port, callback) {
 }
 
 function initHost( port, networkID, seed, callback) {
+  console.log('ip: ' + ip.address());
   initDHT( ip.address(), port, networkID, seed, () => {
     initFileDelivery(port, () => {
       my_port=port;
@@ -251,12 +252,13 @@ function initSubscribe(port){
             }
 
             var uploaderip = broadcast['ip'];
+            var uploaderid = broadcast['id'];
             var uploaderport = broadcast['port'];
             var shredsize = broadcast['shred_size'];
 
             const remaining_capacity = getUsedSpace()[0];
 
-            if(remaining_capacity > shredsize)
+            if(remaining_capacity > shredsize && uploaderid != node.identity.toString('hex'))
             {
                 const socket = socketclient(`http://${uploaderip}:${uploaderport}`);
 
@@ -285,6 +287,7 @@ function getPeers(shredsize, callback){
 
     var broadcast = {
         ip: ip.address(),
+        id: node.identity.toString('hex'),
         port: my_port+1,
         shred_size: shredsize
     }
