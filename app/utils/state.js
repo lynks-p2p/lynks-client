@@ -17,7 +17,7 @@ function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
   const filesInfo = [];
   for(var key in fileMap) {
-    if(fileMap.hasOwnProperty(key)) {
+    if(fileMap.hasOwnProperty(key) && key!='rnd' && key!='stmp' && key!='userID') {
         filesInfo.push({
           id: key,
           shreds: fileMap[key].shreds,
