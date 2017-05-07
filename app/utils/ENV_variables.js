@@ -3,7 +3,7 @@
 import path from 'path';
 
 const basePath = path.resolve('./') + '/';
-const brokerURL = 'http://192.168.1.4:4040/api/users/';
+const brokerURL = 'http://192.168.1.5:4040/api/users/';
 
 const pre_send_path = basePath + 'pre_send/';
 const pre_store_path = basePath + 'pre_store/';
@@ -29,6 +29,7 @@ const maxStorageSlider = Math.pow(10, 6);
 const powerStorageSlider = 12;
 
 export {
+  brokerURL,
   statePath,
   fileMapPath,
   storageDirPath,

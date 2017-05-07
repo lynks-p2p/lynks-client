@@ -19,7 +19,7 @@ import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/style
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
-import { loginCall } from '../../upload';
+import { loginCall } from '../../draft_tests/upload';
 import { singupCall } from '../../draft_tests/download';
 
 const textfield = {

@@ -11,7 +11,6 @@ import {
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 import crypto from 'crypto';
 import request from 'request';
-const fileMapPath = 'filemap.json';
 
 var masterKey, userID, pin, fileMapKey, userName;
 
