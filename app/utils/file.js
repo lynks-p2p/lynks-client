@@ -212,9 +212,8 @@ function readFileMap(callback) {
     }
     return callback(fileMap,null);
 
-  } catch(error)
-   {
-      return callback(null,error);
+  } catch(error) {
+    return callback(null,error);
   }
 }
 
@@ -499,9 +498,8 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                     });
 
                   }, (err) => { // after all shred-host pairs are uploaded on DHT
-
                     if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err);
-                  }else {
+                  } else {
                   addFileMapEntry(fileID, file, (err) => {
                     if (err){
                       console.log('error adding file map entry');

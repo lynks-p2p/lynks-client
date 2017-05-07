@@ -3,10 +3,10 @@ var io = require('socket.io-client');
 const quasar = require('kad-quasar');
 import ip from 'ip'
 
-import { initHost, node } from './app/utils/peer';
+import { initHost, node } from '../app/utils/peer';
 
 const myport = 8080;
-const networkID = 'YEHIA_HESHAM_SAIDAUC';
+const networkID = new Buffer('YEHIA_HESHAM_SAIDAUC');
 
 const seed = [
   Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),

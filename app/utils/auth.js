@@ -5,6 +5,8 @@ import request from 'request';
 const fileMapPath = 'filemap.json';
 
 var masterKey, userID, pin, fileMapKey, userName;
+
+// Broker access point
 var baseURL = 'http://192.168.1.4:4040/api/users/';
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
