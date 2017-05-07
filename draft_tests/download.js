@@ -2,17 +2,17 @@ import { initHost,node } from '../app/utils/peer';
 import {upload,download,readFileMap } from '../app/utils/file';
 import { signup,login } from '../app/utils/auth'
 
-const myport = 8080;
-const user_ID = 'YEHIA_HESHAM_SAIDAUC';
+const myport = 1337;
+const userName = 'YEHIAa';
 const pin = '12345';
 
 const seed = [
-  Buffer.from('TEST_ON_YEHIA_HESHAM').toString('hex'),
-  { hostname: '10.40.47.118', port: 8080 } //10.7.57.202
+  Buffer.from('ISTHISEVENABROKERYO?').toString('hex'),
+  { hostname: '192.168.1.6', port: 8080 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
-signup(user_ID, (userID) => {
-  login(userID, pin, (err)=>{
+//signup(user_ID, (userID) => {
+  login(userName, pin, (userID, err)=>{
     if(err){  return console.error(err);  }
 
     initHost(myport, userID, seed, () => {
@@ -29,7 +29,7 @@ signup(user_ID, (userID) => {
           else console.log('Download Complete !\n\t ~~~ Check your Lynks Download Folder ~~~');
 
         });
-      });
+      //});
     });
   });
 });
