@@ -42,6 +42,11 @@ function initDHT(ip, port, networkID, seed, callback) {
                     // ];
 
   var KadLocalStorage = require('kad-localstorage');
+
+  if (typeof global.localStorage === "undefined" || global.localStorage === null) {
+    var LocalStorageLib = require('node-localstorage').LocalStorage;
+    global.localStorage = new LocalStorageLib('./DHT_Storage');
+  }
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),

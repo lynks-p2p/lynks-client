@@ -20,6 +20,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
 import { loginCall } from '../../upload';
+import { singupCall } from '../../draft_tests/download';
 
 const textfield = {
   marginLeft: 20,
@@ -70,7 +71,9 @@ export default class Home extends Component {
     });
   }
   handleSignUp = () => {
-    this.setState({...this.state, logged:true});
+    singupCall(()=>{
+      this.setState({...this.state, logged:true});
+    })
   }
   handleLogOff = () => {
     console.log('Logging Off');

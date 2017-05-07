@@ -11,7 +11,7 @@ const pin = '12345';
 
 const seed = [
     Buffer.from('YEHIA_HESHAM_SAIDAUC').toString('hex'),
-  { hostname: '192.168.1.2', port: 8080 } //10.7.57.202
+  { hostname: '192.168.1.5', port: 8080 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
 export function loginCall(callback){
