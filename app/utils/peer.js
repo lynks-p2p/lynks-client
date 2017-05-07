@@ -41,11 +41,11 @@ function initDHT(ip, port, networkID, seed, callback) {
                     //   { hostname: 'hostname_IP', port: hostname_PORT }
                     // ];
 
-
+  var KadLocalStorage = require('kad-localstorage');
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    storage: levelup('./DHT_Storage/'),
+    storage: new KadLocalStorage('storage'),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID)
   });
@@ -313,6 +313,7 @@ function getPeers(shredsize, callback){
       http.close();
       sortHosts(hosts, (newhosts)=>{
           console.log('Done sorting.');
+          console.log(newhosts);
           callback(newhosts);
       });
     }, 10000);

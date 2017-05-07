@@ -24,7 +24,7 @@ function readFilesInfo() {
           name: fileMap[key].name,
           status: 1,
           uploadTime: fileMap[key].uploadTime,
-          size: fileMap[key].size/1024,
+          size: fileMap[key].size/1024, // to be CHANGED add size to fileMapEntry in file.js
         });
     }
   }

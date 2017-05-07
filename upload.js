@@ -6,12 +6,12 @@ import { signup,login, setFileMapKey } from './app/utils/auth'
 import {encryptedFileMapPath} from './app/utils/ENV_variables';
 import { generateFileMapKey }  from  './app/utils/keys_ids';
 const myport = 1337;
-const user_ID = 'YEHIA_HESHAM_SAIDAUC';
+const user_ID = 'YEHIA_HESHAM_CHOUAIB';
 const pin = '12345';
 
 const seed = [
-  Buffer.from('ISTHISEVENABROKERYO?').toString('hex'),
-  { hostname: '192.168.1.6', port: 8080 } //10.7.57.202
+    Buffer.from('YEHIA_HESHAM_SAIDAUC').toString('hex'),
+  { hostname: '192.168.1.2', port: 8080 } //10.7.57.202
 ];
 // console.log(require('buffer').kMaxLength);
 export function loginCall(callback){
@@ -25,6 +25,7 @@ export function loginCall(callback){
       signup(user_ID, (userID) => {
         login(userID, pin, (err)=>{
           if(err){  return console.error(err);  }
+          console.log("Done Login!");
           initHost(myport, userID, seed, () => {
 
             console.log('\tidentity is ' + node.router.identity.toString('hex'));

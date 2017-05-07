@@ -4,8 +4,8 @@ import path from 'path';
 
 const basePath = path.resolve('./') + '/';
 
-const pre_send_path = basePath + 'pre_send';
-const pre_store_path = basePath + 'pre_store';
+const pre_send_path = basePath + 'pre_send/';
+const pre_store_path = basePath + 'pre_store/';
 const downloadsDirPath = basePath + 'Downloads';
 const storageDirPath = basePath + 'Storage';
 
