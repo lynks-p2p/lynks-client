@@ -12,7 +12,7 @@ import {
   maxStorageSlider
 } from './ENV_variables';
 
-// to be CHANGED don't real all fileMapEntries
+
 function readFilesInfo() {
   const fileMap = JSON.parse(fs.readFileSync(fileMapPath));
   const filesInfo = [];
