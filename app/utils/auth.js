@@ -11,11 +11,12 @@ import {
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 import crypto from 'crypto';
 import request from 'request';
+import { initHost } from './peer';
 
 var masterKey, userID, pin, fileMapKey, userName;
 
 // Broker access point
-import { brokerURL } from './ENV_variables';
+import { brokerURL, myport, seed } from './ENV_variables';
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
 
@@ -78,7 +79,10 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
                   console.log('Authentication complete! Welcome back '+userID);
                   setMasterKey (mKey);
                   //console.log('received user ID: ' + userID);
-                  return callback(userID, null);
+                  initHost(myport, userID, seed, () => {
+                    console.log('====== Host Initialized Successfuly =======');
+                    return callback(userID, null);
+                  });
                 });
               });
           });

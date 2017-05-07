@@ -26,6 +26,7 @@ import CloudDone from 'material-ui/svg-icons/file/cloud-done';
 import Storage from 'material-ui/svg-icons/device/storage';
 import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
+import { upload, download } from '../utils/file';
 
 import {
   uploadMessage,
@@ -41,6 +42,12 @@ const filesButton = {
 const iconStyles = {
   marginRight: 20,
 };
+
+
+
+
+
+
 class LynksVault extends Component {
 
   constructor() {
@@ -49,33 +56,41 @@ class LynksVault extends Component {
       files: readFilesInfo(),
       notification: false,
       fileName: '',
+      progressStatus:0,
+      status:''
     };
   }
 
-  handleChange = (e, results) => {
+  onClickUpload = (e, results) => {
     const files = this.state.files.slice();
-    let IDsofShreds;
     console.log(results);
     const uploadTime = new Date().toISOString().
                           substring(0,16).
                           replace(/T/, ' ').
                           replace(/\..+/, '');
     const fileKey = files.length + 1;
+    let filePath;
     results.forEach(result => {
       const [e, file] = result;
-
-      // call upload function from file.js
-
+      filePath = file.path;
       files.push({
         id: fileKey,
-        shreds: IDsofShreds,
         name: file.name,
         status: 1,
         uploadTime: uploadTime,
         size: file.size/1024,
       });
     });
+    console.log(this.state);
+    console.log('Created local fileInfos:');
     this.setState({ files: files });
+    console.log(this.state);
+    console.log('Calling Upload - filePath:');
+    console.log(filePath);
+    upload(filePath, this.setState.bind(this), this.state, ()=>{
+      console.log('Done uploading - Inside onClickUpload');
+      this.setState({ files: readFilesInfo() });
+    });
   }
 
   onClickDownload(fileID){
@@ -138,8 +153,8 @@ class LynksVault extends Component {
           <TableRowColumn>
             {
               <div>
-                <LinearProgress mode="determinate" value={100} />
-                {uploadMessage}
+                <LinearProgress mode="determinate" value={this.state.progressStatus} />
+                {this.state.status}
               </div>
             }
           </TableRowColumn>
@@ -220,7 +235,7 @@ class LynksVault extends Component {
                 </TableRowColumn>
                 <TableRowColumn style={{textAlign: 'right', paddingBottom: '4px'}}>
                   <FloatingActionButton mini={true} colSpan="3">
-                    <FileReaderInput  onChange={this.handleChange}>
+                    <FileReaderInput  onChange={this.onClickUpload}>
                       <ContentAdd />
                     </FileReaderInput>
                    </FloatingActionButton>

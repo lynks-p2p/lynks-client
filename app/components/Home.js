@@ -19,13 +19,12 @@ import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/style
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
-import { loginCall } from '../../draft_tests/upload';
-import { singupCall } from '../../draft_tests/download';
+import { login } from '../utils/auth';
 
 const textfield = {
   marginLeft: 20,
 };
-const login = {
+const loginStyle = {
   height: 300,
   width: 300,
   marginTop: 150,
@@ -66,14 +65,13 @@ export default class Home extends Component {
     };
   }
   handleLogin = () => {
-    loginCall(()=>{
-      this.setState({...this.state, logged:true});
-    });
-  }
-  handleSignUp = () => {
-    singupCall(()=>{
+    login('CHOUAIB','12345',(userId,err)=>{
+      console.log('Welcome '+userId);
       this.setState({...this.state, logged:true});
     })
+  }
+  handleSignUp = () => {
+    this.setState({...this.state, logged:true});
   }
   handleLogOff = () => {
     console.log('Logging Off');
@@ -136,7 +134,7 @@ export default class Home extends Component {
               this.state.logged?
               app
               :
-              <Paper style={login} zDepth={2}>
+              <Paper style={loginStyle} zDepth={2}>
                 <Subheader style={{fontWeight:'bold'}}>Login or Sign up</Subheader>
                 <TextField hintText="User Name" style={textfield} underlineShow={true} />
                 <TextField hintText="Password" style={textfield} underlineShow={true} />

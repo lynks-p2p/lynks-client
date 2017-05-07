@@ -5,6 +5,12 @@ import path from 'path';
 const basePath = path.resolve('./') + '/';
 const brokerURL = 'http://192.168.1.5:4040/api/users/';
 
+const seed = [
+  Buffer.from('THISISTHEBESTBROKER!').toString('hex'),
+  { hostname: '192.168.1.5', port: 1337 } //10.7.57.202
+];
+const myport = 1337;
+
 const pre_send_path = basePath + 'pre_send/';
 const pre_store_path = basePath + 'pre_store/';
 const downloadsDirPath = basePath + 'Downloads';
@@ -29,6 +35,8 @@ const maxStorageSlider = Math.pow(10, 6);
 const powerStorageSlider = 12;
 
 export {
+  seed,
+  myport,
   brokerURL,
   statePath,
   fileMapPath,

@@ -307,6 +307,7 @@ function removeFileMapEntry(fileID, callback) {
 }
 
 function shredFile(filename, filepath, NShreds, parity, callback) {
+  const fileSize = fs.statSync(filepath).size;
   fileToBuffer(filepath, (loadedBuffer, err) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
@@ -344,6 +345,7 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
                           salt: crypto.randomBytes(256),
                           parity: parity,
                           NShreds: NShreds,
+                          size: fileSize,
                           shardLength: shardLength,
                           deadbytes: deadbytes
                         }
@@ -431,7 +433,7 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
-function upload(filepath, callback) { //  to upload a file in Lynks
+function upload(filepath, setStateRef, stateRef, callback) { //  to upload a file in Lynks
 
   const NShreds = 10;
   const parity = 2;
@@ -439,15 +441,20 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
 
+  setStateRef({...stateRef, status:'File Shredding...'});
+
   shredFile(fileName, filepath, NShreds, parity, (fileID, file, shredIDs) => {
     if ((!shredIDs)||(!file)) {
       return callback('error shredding file');
     }
     console.log ('Done shredding');
 
+    setStateRef({...stateRef, progressStatus: 20, status:'Getting Peers...'});
+
     // PEER SELECTION!!!!!!!!!!!!!!!!
 
     var shredsize = file.shardLength;
+
     getPeers(shredsize, (hosts)=> {
 
         var sentCount = 0; // # of recieved Shreds
@@ -455,6 +462,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
         var shredsCopy=shredIDs.slice();
         let shredPeerInfo=[];
 
+        setStateRef({...stateRef, progressStatus: 50, status:'Uploading Shreds...'});
 
         async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
 
@@ -477,6 +485,9 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         return eachOfasyncCallback();
                       }
                      sentCount++;
+
+                     setStateRef({...stateRef, progressStatus: 50+sentCount, status:'Uploading Shreds...'});
+
                      console.log(sentCount+'/'+shredIDs.length);
                      shredPeerInfo.push({shred:shredToTry, id:val['id'] });
                      eachOfasyncCallback();
@@ -501,6 +512,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         }
 
                   console.log('Uploading shreds to DHT');
+                  setStateRef({...stateRef, progressStatus: 80, status:'Updating DHT...'});
                   async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
 
                     // BUG: given a wrong id, empty, it contiues without error
@@ -518,7 +530,7 @@ function upload(filepath, callback) { //  to upload a file in Lynks
 
                   console.log('Done Uploading shreds to DHT');
                   console.log('Updating the encryptFileMap');
-
+                  setStateRef({...stateRef, progressStatus: 90, status:'Syncing FileMap...'});
                   addFileMapEntry(fileID, file, (err) => {
                     if (err){
                       console.log('error adding file map entry');
@@ -534,6 +546,8 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         }
                         console.log('Sync file map complete');
                         console.log('File upload complete!!!');
+                        setStateRef({...stateRef, progressStatus: 100, status:'Ready'});
+
                         return callback(null);
                       });
                   });

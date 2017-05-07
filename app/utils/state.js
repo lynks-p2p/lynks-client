@@ -20,7 +20,6 @@ function readFilesInfo() {
     if(fileMap.hasOwnProperty(key) && key!='rnd' && key!='stmp' && key!='userID') {
         filesInfo.push({
           id: key,
-          shreds: fileMap[key].shreds,
           name: fileMap[key].name,
           status: 1,
           uploadTime: fileMap[key].uploadTime,
