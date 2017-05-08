@@ -90,7 +90,7 @@ export default class Home extends Component {
   }
   render() {
     const app = (this.state.tab == 1) ? <LynksVault /> : <LynksDrive />;
-    const title = (this.state.logged) ? 'UserName' : 'Logged Off';
+    const title = (this.state.logged) ? this.state.username : 'Logged Off';
     const totalSpace = getStorageSpace();
     const availableSpace = (totalSpace>=1024) ? totalSpace/1024 : totalSpace;
     const storageUnit = (totalSpace>=1024) ? 'Gb' : 'Mb';
