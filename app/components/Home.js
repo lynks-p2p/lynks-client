@@ -61,6 +61,8 @@ export default class Home extends Component {
     super();
     this.state = {
       logged: false,
+      loggingIn: false,
+      requesting: false,
       signUp: true, // signUp = false --> loggin
       tab: 1,
       username: '',
@@ -68,17 +70,20 @@ export default class Home extends Component {
     };
   }
   handleLogin = () => {
+    this.setState({...this.state, requesting: true, loggingIn: true});
     login(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
         console.log('Welcome '+userId);
-        this.setState({...this.state, logged:true});
+        this.setState({...this.state, logged:true, requesting: false, loggingIn: false});
       }
     })
   }
   handleSignUp = () => {
+    this.setState({...this.state, requesting: true, loggingIn: false});
     signup(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
         console.log('Sign up successful '+userId);
+        this.setState({...this.state, requesting: false, loggingIn: false});
         // this.setState({...this.state, logged:true});
       }
     })
@@ -98,12 +103,10 @@ export default class Home extends Component {
     const title = (this.state.logged) ? this.state.username : 'Logged Off';
     const totalSpace = getStorageSpace();
     const availableSpace = (totalSpace>=1024) ? totalSpace/1024 : totalSpace;
-    const storageUnit = (totalSpace>=1024) ? 'Gb' : 'Mb';
-    const subtitle = (this.state.logged) ? `${availableSpace+storageUnit}` : '';
+    const storageUnit = (totalSpace>=1024) ? 'GB' : 'MB';
+    const subtitle = (this.state.logged) ? `${availableSpace.toFixed(2)}${storageUnit}` : '';
     let signLog;
-    if (this.state.logged){
 
-    }
     return (
       <div>
           <Drawer className={styles.bar} open={true}>
@@ -133,7 +136,7 @@ export default class Home extends Component {
             </Card>
             <MenuItem
             primaryText="Lynks Vault"
-            leftIcon={<Upload />}LynksVault
+            leftIcon={<Upload />}
             value={1}
             onTouchTap={()=>{this.setState({tab: 1});}}
             />
@@ -152,8 +155,17 @@ export default class Home extends Component {
           </Drawer>
           <div className={styles.app}>
             {
-              this.state.logged?
+              this.state.logged ?
               app
+              :
+              this.state.requesting ?
+              // IMAGE HERE
+              <Paper style={loginStyle} zDepth={2}>
+                <img src="../resources/loading.gif" />
+                <div style={{textAlign: 'center', verticalAlign: 'middle', fontSize: '20px', padding: '20px'}}>
+                  { this.state.loggingIn ? 'LOGGING IN...' : 'SIGNING UP...'}
+                </div>
+              </Paper>
               :
               <Paper style={loginStyle} zDepth={2}>
                 <Subheader style={{fontWeight:'bold'}}>Login or Sign up</Subheader>
@@ -162,14 +174,14 @@ export default class Home extends Component {
                 <TextField floatingLabelText="Password" type="password" value={ this.state.password} onChange={(e, val) => this.setState({...this.state, password: val})}/>
                 <div style={container}>
                   <RaisedButton
-                    label='Login'
+                    label='Sign Up'
                     secondary={true}
-                    onTouchTap={this.handleLogin}
+                    onTouchTap={this.handleSignUp}
                   />
                   <RaisedButton
-                    label='Sign Up'
+                    label='Login'
                     primary={true}
-                    onTouchTap={this.handleSignUp}
+                    onTouchTap={this.handleLogin}
                   />
                 </div>
               </Paper>
