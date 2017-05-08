@@ -18,8 +18,8 @@ import Subheader from 'material-ui/Subheader';
 import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
-import LoggOff from 'material-ui/svg-icons/file/cloud-off';
-import { login, signup } from '../utils/auth';
+import LogOff from 'material-ui/svg-icons/file/cloud-off';
+import { login, signup, logoff } from '../utils/auth';
 
 const textfield = {
   marginLeft: '10%',
@@ -85,8 +85,13 @@ export default class Home extends Component {
   }
   handleLogOff = () => {
     console.log('Logging Off');
-    this.setState({...this.state, logged:false});
-    console.log(this.state);
+    logoff((err) => {
+      if (!err) {
+        this.setState({...this.state, logged:false, username: null, password: null});
+      }
+    })
+
+    // console.log(this.state);
   }
   render() {
     const app = (this.state.tab == 1) ? <LynksVault /> : <LynksDrive />;
@@ -113,10 +118,16 @@ export default class Home extends Component {
                    style={styles.small}
                    onTouchTap={this.handleLogOff}
                  >
-                   <LoggOff
-                     color={red200}
-                     hoverColor={redA700}
-                   />
+                   {
+                     this.state.logged?
+                     <LogOff
+                       color={red200}
+                       hoverColor={redA700}
+                     />
+                     :
+                     null
+                   }
+
                  </IconButton>
               </div>
             </Card>
