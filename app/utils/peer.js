@@ -20,7 +20,7 @@ import {
   deltaMinutes
 } from './ENV_variables';
 
-import { getUsedSpace } from './state';
+import { getStorageInfo } from './state';
 
 const quasar = require('kad-quasar');
 const app = require('express')();
@@ -251,7 +251,7 @@ function initSubscribe(port){
             var uploaderport = broadcast['port'];
             var shredsize = broadcast['shred_size'];
 
-            const remaining_capacity = getUsedSpace()[0];
+            const remaining_capacity = getStorageInfo()[0];
 
 
             // if(remaining_capacity > shredsize)
