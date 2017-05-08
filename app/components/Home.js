@@ -19,22 +19,23 @@ import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/style
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
-import { login } from '../utils/auth';
+import { login, signup } from '../utils/auth';
 
 const textfield = {
-  marginLeft: 20,
+  marginLeft: '10%',
 };
 const loginStyle = {
-  height: 300,
-  width: 300,
-  marginTop: 150,
-  marginLeft: 350,
+  height: '50%',
+  width: '50%',
+  marginTop: '15%',
+  marginLeft: '25%',
+  paddingBottom: '4%',
   textAlign: 'center',
   display: 'inline-block',
-  backgroundColor: 'rgb(230, 255, 255)',
+  backgroundColor: 'rgb(230, 255, 255)'
 };
 const container = {
-  marginTop:80,
+  marginTop: '10%',
   display: 'flex',
   flexDirection: 'row',
   justifyContent: 'space-around',
@@ -61,17 +62,26 @@ export default class Home extends Component {
     this.state = {
       logged: false,
       signUp: true, // signUp = false --> loggin
-      tab: 1
+      tab: 1,
+      username: '',
+      password: ''
     };
   }
   handleLogin = () => {
-    login('CHOUAIB','12345',(userId,err)=>{
-      console.log('Welcome '+userId);
-      this.setState({...this.state, logged:true});
+    login(this.state.username, this.state.password, (userId,err)=>{
+      if (!err) {
+        console.log('Welcome '+userId);
+        this.setState({...this.state, logged:true});
+      }
     })
   }
   handleSignUp = () => {
-    this.setState({...this.state, logged:true});
+    signup(this.state.username, this.state.password, (userId,err)=>{
+      if (!err) {
+        console.log('Sign up successful '+userId);
+        // this.setState({...this.state, logged:true});
+      }
+    })
   }
   handleLogOff = () => {
     console.log('Logging Off');
@@ -136,8 +146,9 @@ export default class Home extends Component {
               :
               <Paper style={loginStyle} zDepth={2}>
                 <Subheader style={{fontWeight:'bold'}}>Login or Sign up</Subheader>
-                <TextField hintText="User Name" style={textfield} underlineShow={true} />
-                <TextField hintText="Password" style={textfield} underlineShow={true} />
+                <TextField floatingLabelText="Username" value={this.state.username} onChange={(e, val) => this.setState({...this.state, username: val})}/>
+                <br/>
+                <TextField floatingLabelText="Password" type="password" value={ this.state.password} onChange={(e, val) => this.setState({...this.state, password: val})}/>
                 <div style={container}>
                   <RaisedButton
                     label='Login'

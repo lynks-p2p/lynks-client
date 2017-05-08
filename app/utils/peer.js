@@ -253,6 +253,8 @@ function initSubscribe(port){
 
             const remaining_capacity = getUsedSpace()[0];
 
+
+            // if(remaining_capacity > shredsize)
             if(remaining_capacity > shredsize && uploaderid != node.identity.toString('hex'))
             {
                 const socket = socketclient(`http://${uploaderip}:${uploaderport}`);

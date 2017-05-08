@@ -217,7 +217,6 @@ function readFileMap(callback) {
         });
     } else {
       fileMap = JSON.parse(fs.readFileSync(fileMapPath));
-      console.log('LOLZ');
     }
     return callback(fileMap,null);
 
