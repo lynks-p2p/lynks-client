@@ -10,7 +10,7 @@ import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import {Table, TableBody, TableHeader, TableFooter, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
 import {readFilesInfo, loadActivityPattern} from '../utils/state';
-import {shredFile, removeFileMapEntry} from '../utils/file';
+import {shredFile, removeFileMapEntrySync, removeFileMapEntryLocally} from '../utils/file';
 import FileFileDownload from 'material-ui/svg-icons/file/file-download';
 import ActionDeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import ActionCheckCircle from 'material-ui/svg-icons/action/check-circle';
@@ -105,7 +105,7 @@ class LynksVault extends Component {
 
   onClickRemove(fileID){
     const files = this.state.files.slice();
-    removeFileMapEntry(fileID, ()=> {
+    removeFileMapEntrySync(fileID, ()=> {
       console.log('File Removed successfully - fileMap');
     });
     for (var i in files){

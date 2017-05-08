@@ -291,7 +291,7 @@ function addFileMapEntry(fileID, fileMapEntry, callback) {
   });
 }
 
-function removeFileMapEntry(fileID, callback) {
+function removeFileMapEntryLocally(fileID, callback) {
   // self-explanatory
   readFileMap((fileMap,error) => {
     if(error) { return callback('error in reading FileMap');  }
@@ -304,6 +304,22 @@ function removeFileMapEntry(fileID, callback) {
     }
     else return callback('Entry does not exist');
   });
+}
+
+function removeFileMapEntrySync(fileID, callback) {
+   removeFileMapEntryLocally(fileID, ()=>{
+     updateTimeStamp((time, error)=>{
+       if (error){
+         return callback(error);
+       } else console.log('updated time stamp in file map');
+       syncFileMap((err) => {
+         if (err){
+           return callback(err);
+         }
+         return callback();
+       });
+     });
+   });
 }
 
 function shredFile(filename, filepath, NShreds, parity, callback) {
@@ -726,7 +742,8 @@ export {
   getRemoteFileMap,
   syncFileMap,
   addFileMapEntry,
-  removeFileMapEntry,
+  removeFileMapEntryLocally,
+  removeFileMapEntrySync,
   shredFile,
   reconstructFile,
   upload,
