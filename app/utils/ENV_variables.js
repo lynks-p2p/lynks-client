@@ -9,7 +9,7 @@ const seed = [
   Buffer.from('THISISTHEBESTBROKER!').toString('hex'),
   { hostname: '192.168.1.5', port: 1337 } //10.7.57.202
 ];
-const myport = 1337;
+const myport = 4444;
 
 const pre_send_path = basePath + 'pre_send/';
 const pre_store_path = basePath + 'pre_store/';

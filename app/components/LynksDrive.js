@@ -23,6 +23,7 @@ import {
   reverse,
   loadActivityPattern,
   getStorageInfo,
+  getStorageSpace,
   getUsedSpace,
   editStorage
 } from '../utils/state';
@@ -35,7 +36,7 @@ import {
 class LynksDrive extends Component {
 
   state = {
-    slider: 1024,
+    slider: getStorageSpace(),
     dialog: false,
     availabilityData: {
       labels: loadActivityPattern('labels'),
@@ -182,9 +183,9 @@ render() {
                       onRequestClose={this.handleClose}
                     >
                       <span>{`Your current storage space is ${((empty+used)>=1024)?((empty+used)/1024).toFixed(2):empty+used}`}</span>
-                      <span>{`${((empty+used)>=1024)?'Gb':'Mb'}`}</span>
+                      <span>{`${((empty+used)>=1024)?'GB':'MB'}`}</span>
                       <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{`(${(used>=1024)?(used/1024).toFixed(2):used.toFixed(2)}`}</span>
-                      <span>{`${((used)>=1024)?'Gb used)':'Mb used)'}`}</span>
+                      <span>{`${((used)>=1024)?'GB used)':'MB used)'}`}</span>
                       <Slider
                         min={minStorageSlider}
                         max={maxStorageSlider}
@@ -194,7 +195,7 @@ render() {
                       />
                       <p>
                         <span>{`Selected sotrage: ${(this.state.slider>=1024)?(this.state.slider/1024).toFixed(2):this.state.slider}`}</span>
-                        <span>{`${(this.state.slider>=1024)?'Gb':'Mb'}`}</span>
+                        <span>{`${(this.state.slider>=1024)?'GB':'MB'}`}</span>
                       </p>
                       <span style={{color:'#FF0000', fontWeight:'lighter'}}>{(this.state.slider<used)?"(WARNING: SELECTED STORAGE LESS THAN USED STORAGE)":""}</span>
                     </Dialog>

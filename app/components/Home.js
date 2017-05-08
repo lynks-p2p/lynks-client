@@ -18,10 +18,10 @@ import Subheader from 'material-ui/Subheader';
 import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
-import LoggOff from 'material-ui/svg-icons/file/cloud-off';
-import { login, signup } from '../utils/auth';
 import Snackbar from 'material-ui/Snackbar';
 import AlertError from 'material-ui/svg-icons/alert/error';
+import LogOff from 'material-ui/svg-icons/file/cloud-off';
+import { login, signup, logoff } from '../utils/auth';
 
 const textfield = {
   marginLeft: '10%',
@@ -68,6 +68,8 @@ export default class Home extends Component {
       notification: false,
       notificationMessage: '',
       logged: false,
+      loggingIn: false,
+      requesting: false,
       signUp: true, // signUp = false --> loggin
       tab: 1,
       username: '',
@@ -75,42 +77,47 @@ export default class Home extends Component {
     };
   }
   handleLogin = () => {
+    this.setState({...this.state, requesting: true, loggingIn: true});
     login(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        this.setState({...this.state, logged:true});
+        this.setState({...this.state, logged:true, requesting: false, loggingIn: false});
       } else {
         this.setState({notification: true, notificationMessage: err});
       }
     })
   }
   handleSignUp = () => {
+    this.setState({...this.state, requesting: true, loggingIn: false});
     signup(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        this.setState({...this.state, logged:true});
+        this.setState({...this.state, requesting: false, loggingIn: false});
       } else {
         this.setState({notification: true, notificationMessage: err});
       }
-    })
+    });
   }
   handleLogOff = () => {
     console.log('Logging Off');
-    this.setState({...this.state, logged:false});
-    console.log(this.state);
+    logoff((err) => {
+      if (!err) {
+        this.setState({...this.state, logged:false, username: null, password: null});
+      }
+    })
+
+    // console.log(this.state);
   }
   handleRequestClose = () => {
     this.setState({notification:false, notificationMessage:''});
   };
   render() {
     const app = (this.state.tab == 1) ? <LynksVault /> : <LynksDrive />;
-    const title = (this.state.logged) ? 'UserName' : 'Logged Off';
+    const title = (this.state.logged) ? this.state.username : 'Logged Off';
     const totalSpace = getStorageSpace();
     const availableSpace = (totalSpace>=1024) ? totalSpace/1024 : totalSpace;
-    const storageUnit = (totalSpace>=1024) ? 'Gb' : 'Mb';
-    const subtitle = (this.state.logged) ? `${availableSpace+storageUnit}` : '';
+    const storageUnit = (totalSpace>=1024) ? 'GB' : 'MB';
+    const subtitle = (this.state.logged) ? `${availableSpace.toFixed(2)}${storageUnit}` : '';
     let signLog;
-    if (this.state.logged){
 
-    }
     return (
       <div>
           <Drawer className={styles.bar} open={true}>
@@ -125,16 +132,22 @@ export default class Home extends Component {
                    style={styles.small}
                    onTouchTap={this.handleLogOff}
                  >
-                   <LoggOff
-                     color={red200}
-                     hoverColor={redA700}
-                   />
+                   {
+                     this.state.logged?
+                     <LogOff
+                       color={red200}
+                       hoverColor={redA700}
+                     />
+                     :
+                     null
+                   }
+
                  </IconButton>
               </div>
             </Card>
             <MenuItem
             primaryText="Lynks Vault"
-            leftIcon={<Upload />}LynksVault
+            leftIcon={<Upload />}
             value={1}
             onTouchTap={()=>{this.setState({tab: 1});}}
             />
@@ -153,8 +166,17 @@ export default class Home extends Component {
           </Drawer>
           <div className={styles.app}>
             {
-              this.state.logged?
+              this.state.logged ?
               app
+              :
+              this.state.requesting ?
+              // IMAGE HERE
+              <Paper style={loginStyle} zDepth={2}>
+                <img src="../resources/loading.gif" />
+                <div style={{textAlign: 'center', verticalAlign: 'middle', fontSize: '20px', padding: '20px'}}>
+                  { this.state.loggingIn ? 'LOGGING IN...' : 'SIGNING UP...'}
+                </div>
+              </Paper>
               :
               <Paper style={loginStyle} zDepth={2}>
                 <Subheader style={{fontWeight:'bold'}}>Login or Sign up</Subheader>
@@ -163,14 +185,14 @@ export default class Home extends Component {
                 <TextField floatingLabelText="Password" type="password" value={ this.state.password} onChange={(e, val) => this.setState({...this.state, password: val})}/>
                 <div style={container}>
                   <RaisedButton
-                    label='Login'
+                    label='Sign Up'
                     secondary={true}
-                    onTouchTap={this.handleLogin}
+                    onTouchTap={this.handleSignUp}
                   />
                   <RaisedButton
-                    label='Sign Up'
+                    label='Login'
                     primary={true}
-                    onTouchTap={this.handleSignUp}
+                    onTouchTap={this.handleLogin}
                   />
                 </div>
               </Paper>

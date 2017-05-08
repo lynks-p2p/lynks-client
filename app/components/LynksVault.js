@@ -158,7 +158,7 @@ class LynksVault extends Component {
       let fileUnit = 'KB'
       if (file.size>(1024*1024)){
         fileSize = file.size / 1024 / 1024;
-        fileUnit = 'Gb';
+        fileUnit = 'GB';
       } else if(file.size>1024){
         fileSize = file.size / 1024;
         fileUnit = 'Mb';

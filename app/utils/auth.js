@@ -11,12 +11,16 @@ import {
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 import crypto from 'crypto';
 import request from 'request';
-import { initHost } from './peer';
+import { initHost, stopHost } from './peer';
 
 var masterKey, userID, pin, fileMapKey, userName;
 
 // Broker access point
 import { brokerURL, myport, seed } from './ENV_variables';
+
+function logoff(callback) {
+  stopHost(callback);
+}
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
 
@@ -140,6 +144,7 @@ function getFileMapKey () { // gets the MasterKey
 export {
   login,
   signup,
+  logoff,
   getUserID,
   getPin,
   getMasterKey,

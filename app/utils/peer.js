@@ -75,13 +75,14 @@ function initDHT(ip, port, networkID, seed, callback) {
   });
 }
 
+let ioServ = null;
 function initFileDelivery(port, callback) {
-  const io  = socketio.listen(port);
+  ioServ  = socketio.listen(port);
   // console.log('listening: '+ ip);
 
   const shredsStoredPath = storageDirPath+'/';
 
-  io.sockets.on('connection', (socket) => {
+  ioServ.sockets.on('connection', (socket) => {
     console.log('connected');
 
     socket.on('retrieve_shred', (data) => {
@@ -104,6 +105,17 @@ function initFileDelivery(port, callback) {
   });
 
   callback();
+}
+
+function stopHost(callback) {
+  console.log(node);
+  node.transport.socket.close(() => {
+    // console.log(socketio);
+    ioServ.close(() => {
+      console.log('Successfully stopped host');
+      return callback();
+    })
+  })
 }
 
 function initHost( port, networkID, seed, callback) {
@@ -321,7 +333,7 @@ function getPeers(shredsize, callback){
           console.log(newhosts);
           callback(newhosts);
       });
-    }, 10000);
+    }, 3000);
 }
 
 function getPeerLatency(ip, callback) {
@@ -434,4 +446,4 @@ function sortHosts(hosts, callback) {
     });
 }
 
-export { node, initSubscribe, getPeers, initHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};
+export { node, initSubscribe, getPeers, initHost, stopHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};
