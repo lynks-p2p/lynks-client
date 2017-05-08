@@ -321,7 +321,7 @@ function getPeers(shredsize, callback){
           console.log(newhosts);
           callback(newhosts);
       });
-    }, 10000);
+    }, 3000);
 }
 
 function getPeerLatency(ip, callback) {
