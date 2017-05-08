@@ -153,7 +153,7 @@ class LynksVault extends Component {
           <TableRowColumn>
             {
               <div>
-                <LinearProgress mode="determinate" value={this.state.progressStatus} />
+                <LinearProgress mode="determinate" color={(this.state.progressStatus==100)?greenA700:''} value={this.state.progressStatus} />
                 {this.state.status}
               </div>
             }
