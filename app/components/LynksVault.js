@@ -27,6 +27,7 @@ import Storage from 'material-ui/svg-icons/device/storage';
 import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
 import { upload, download } from '../utils/file';
+import CircularProgress from 'material-ui/CircularProgress';
 
 import {
   uploadMessage,
@@ -95,7 +96,7 @@ class LynksVault extends Component {
 
         // call download from file.js
 
-        files[i].status = 0;
+        files[i].progressStatus = -1;
         fileName = files[i].fileName;
         break;
       }
@@ -134,6 +135,27 @@ class LynksVault extends Component {
         fileSize = file.size / 1024;
         fileUnit = 'Mb';
       }
+      // download - downloading - downloaded icons component
+
+      let downloadIcon = <CircularProgress size={20}/>;
+
+      if (file.progressStatus === 100){
+        downloadIcon = <FileFileDownload
+                        onTouchTap={()=>{this.onClickDownload(file.id)}}
+                        style={iconStyles}
+                        color={green200}
+                        hoverColor={greenA700}
+                      />;
+      } else if (file.progressStatus === -1) {
+        downloadIcon = <ActionCheckCircle
+                        onTouchTap={()=>{this.onClickDownload(file.id)}}
+                        style={iconStyles}
+                        color={green200}
+                        hoverColor={greenA700}
+                      />
+      } else {
+        downloadIcon = <CircularProgress size={20} style={iconStyles}/>;
+      }
       return (
         <TableRow>
           <TableRowColumn>{file.name}</TableRowColumn>
@@ -148,27 +170,13 @@ class LynksVault extends Component {
             }
           </TableRowColumn>
           <TableRowColumn>
-            { (file.status == 1) ?
-              <FileFileDownload
-                onTouchTap={()=>{this.onClickDownload(file.id)}}
-                style={iconStyles}
-                color={green200}
-                hoverColor={greenA700}
-              />
-              :
-              <ActionCheckCircle
-                onTouchTap={()=>{this.onClickDownload(file.id)}}
-                style={iconStyles}
-                color={green200}
-                hoverColor={greenA700}
-              />
-            }
-              <ActionDeleteForever
-                onTouchTap={()=>{this.onClickRemove(file.id)}}
-                style={iconStyles}
-                color={red200}
-                hoverColor={redA700}
-              />
+            {downloadIcon}
+            <ActionDeleteForever
+              onTouchTap={()=>{this.onClickRemove(file.id)}}
+              style={iconStyles}
+              color={red200}
+              hoverColor={redA700}
+            />
           </TableRowColumn>
         </TableRow>
       )
