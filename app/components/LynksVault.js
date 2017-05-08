@@ -44,8 +44,8 @@ const iconStyles = {
 };
 
 
-
-
+// ADD notification snackbars - state.open
+// MAKE DELETE WORK
 
 
 class LynksVault extends Component {
@@ -63,7 +63,6 @@ class LynksVault extends Component {
 
   onClickUpload = (e, results) => {
     const files = this.state.files.slice();
-    console.log(results);
     const uploadTime = new Date().toISOString().
                           substring(0,16).
                           replace(/T/, ' ').
@@ -76,19 +75,14 @@ class LynksVault extends Component {
       files.push({
         id: fileKey,
         name: file.name,
-        status: 1,
+        progressStatus: 0,
+        status: 'Ready to upload...',
         uploadTime: uploadTime,
         size: file.size/1024,
       });
-    });
-    console.log(this.state);
-    console.log('Created local fileInfos:');
+  })
     this.setState({ files: files });
-    console.log(this.state);
-    console.log('Calling Upload - filePath:');
-    console.log(filePath);
-    upload(filePath, this.setState.bind(this), this.state, ()=>{
-      console.log('Done uploading - Inside onClickUpload');
+    upload(filePath, this.setState.bind(this), this.state, fileKey, ()=>{
       this.setState({ files: readFilesInfo() });
     });
   }
@@ -106,12 +100,7 @@ class LynksVault extends Component {
         break;
       }
     }
-    console.log('OnClickDownload: ');
-    console.log(fileID);
-    console.log(files);
-    console.log(files[fileID]);
     this.setState({ files: files, open: true, fileName: fileName });
-    console.log(this.state);
   }
 
   onClickRemove(fileID){
@@ -153,8 +142,8 @@ class LynksVault extends Component {
           <TableRowColumn>
             {
               <div>
-                <LinearProgress mode="determinate" color={(this.state.progressStatus==100)?greenA700:''} value={this.state.progressStatus} />
-                {this.state.status}
+                <LinearProgress mode="determinate" color={(file.progressStatus==100)?greenA700:''} value={file.progressStatus} />
+                {file.status}
               </div>
             }
           </TableRowColumn>

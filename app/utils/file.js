@@ -433,7 +433,20 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
-function upload(filepath, setStateRef, stateRef, callback) { //  to upload a file in Lynks
+function updateFileInState(state, fileKey, progressStatus, status) {
+  const newFiles = [];
+  state.files.forEach(file=>{
+    if(file.id === fileKey){
+      newFiles.push({...file, progressStatus: progressStatus, status: status});
+    }
+    else {
+      newFiles.push(file);
+    }
+  });
+  return newFiles;
+}
+
+function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upload a file in Lynks
 
   const NShreds = 10;
   const parity = 2;
@@ -441,7 +454,7 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
 
-  setStateRef({...stateRef, status:'File Shredding...'});
+  setStateRef({files: updateFileInState(stateRef, fileKey, 0, 'Shredding File...')});
 
   shredFile(fileName, filepath, NShreds, parity, (fileID, file, shredIDs) => {
     if ((!shredIDs)||(!file)) {
@@ -449,7 +462,7 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
     }
     console.log ('Done shredding');
 
-    setStateRef({...stateRef, progressStatus: 20, status:'Getting Peers...'});
+    setStateRef({files: updateFileInState(stateRef, fileKey, 20, 'Getting Peers...')});
 
     // PEER SELECTION!!!!!!!!!!!!!!!!
 
@@ -462,7 +475,7 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
         var shredsCopy=shredIDs.slice();
         let shredPeerInfo=[];
 
-        setStateRef({...stateRef, progressStatus: 50, status:'Uploading Shreds...'});
+        setStateRef({files: updateFileInState(stateRef, fileKey, 50, 'Uploading...')});
 
         async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
 
@@ -486,7 +499,7 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
                       }
                      sentCount++;
 
-                     setStateRef({...stateRef, progressStatus: 50+sentCount, status:'Uploading Shreds...'});
+                     setStateRef({files: updateFileInState(stateRef, fileKey, 50+sentCount, 'Uploading...')});
 
                      console.log(sentCount+'/'+shredIDs.length);
                      shredPeerInfo.push({shred:shredToTry, id:val['id'] });
@@ -512,7 +525,9 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
                         }
 
                   console.log('Uploading shreds to DHT');
-                  setStateRef({...stateRef, progressStatus: 80, status:'Updating DHT...'});
+
+                  setStateRef({files: updateFileInState(stateRef, fileKey, 80, 'Updating DHT...')});
+
                   async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
 
                     // BUG: given a wrong id, empty, it contiues without error
@@ -530,7 +545,9 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
 
                   console.log('Done Uploading shreds to DHT');
                   console.log('Updating the encryptFileMap');
-                  setStateRef({...stateRef, progressStatus: 90, status:'Syncing FileMap...'});
+
+                  setStateRef({files: updateFileInState(stateRef, fileKey, 90, 'Syncing filemap...')});
+
                   addFileMapEntry(fileID, file, (err) => {
                     if (err){
                       console.log('error adding file map entry');
@@ -546,7 +563,8 @@ function upload(filepath, setStateRef, stateRef, callback) { //  to upload a fil
                         }
                         console.log('Sync file map complete');
                         console.log('File upload complete!!!');
-                        setStateRef({...stateRef, progressStatus: 100, status:'Ready'});
+
+                        setStateRef({files: updateFileInState(stateRef, fileKey, 100, 'Ready')});
 
                         return callback(null);
                       });
