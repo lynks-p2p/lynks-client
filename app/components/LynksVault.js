@@ -45,9 +45,6 @@ const iconStyles = {
 };
 
 
-// ADD notification snackbars - state.open
-// MAKE DELETE WORK
-
 
 class LynksVault extends Component {
 
@@ -56,14 +53,13 @@ class LynksVault extends Component {
     this.state = {
       files: readFilesInfo(),
       notification: false,
-      fileName: '',
-      progressStatus:0,
-      status:''
+      notificationMessage: ''
     };
   }
 
   onClickUpload = (e, results) => {
     const files = this.state.files.slice();
+    let notificationMessage;
     const uploadTime = new Date().toISOString().
                           substring(0,16).
                           replace(/T/, ' ').
@@ -73,6 +69,7 @@ class LynksVault extends Component {
     results.forEach(result => {
       const [e, file] = result;
       filePath = file.path;
+      notificationMessage = file.name + ' has been uploaded successfully';
       files.push({
         id: fileKey,
         name: file.name,
@@ -84,40 +81,43 @@ class LynksVault extends Component {
   })
     this.setState({ files: files });
     upload(filePath, this.setState.bind(this), this.state, fileKey, ()=>{
-      this.setState({ files: readFilesInfo() });
+      this.setState({ files: readFilesInfo(), notification: true, notificationMessage: notificationMessage});
     });
   }
 
   onClickDownload(fileID){
     const files = this.state.files.slice();
-    let fileName;
+    let notificationMessage;
     for(var i in files) {
       if(files[i].id == fileID) {
-
-        // call download from file.js
-
-        files[i].progressStatus = -1;
-        fileName = files[i].fileName;
+        notificationMessage = files[i].name + ' has been downloaded successfully';
         break;
       }
     }
-    this.setState({ files: files, open: true, fileName: fileName });
+    download(fileID, this.setState.bind(this), this.state, ()=>{
+      this.setState({ ...this.state, notification: true, notificationMessage: notificationMessage });
+    });
   }
 
   onClickRemove(fileID){
     const files = this.state.files.slice();
-    removeFileMapEntrySync(fileID, ()=> {
-      console.log('File Removed successfully - fileMap');
-    });
+    let notificationMessage;
     for (var i in files){
       if (files[i].id == fileID){
-        files.splice(i, 1);
+        notificationMessage = files[i].name + ' has been deleted successfully';
+        // files.splice(i, 1);
         break;
       }
     }
-    this.setState({ ...this.state, files: files });
+    removeFileMapEntrySync(fileID, ()=> {
+      console.log('File Removed successfully - fileMap');
+      this.setState({ files: readFilesInfo(), notification: true, notificationMessage: notificationMessage});
+    });
   }
 
+  handleRequestClose = () => {
+    this.setState({...state, notification:false, notificationMessage:''});
+  };
   render() {
     const files = this.state.files;
     let filesSize=0;
@@ -137,16 +137,16 @@ class LynksVault extends Component {
       }
       // download - downloading - downloaded icons component
 
-      let downloadIcon = <CircularProgress size={20}/>;
+      let downloadIcon;
 
-      if (file.progressStatus === 100){
+      if (file.progressStatus === 100 && file.status != 'Downloaded'){
         downloadIcon = <FileFileDownload
                         onTouchTap={()=>{this.onClickDownload(file.id)}}
                         style={iconStyles}
                         color={green200}
                         hoverColor={greenA700}
                       />;
-      } else if (file.progressStatus === -1) {
+      } else if (file.status === 'Downloaded') {
         downloadIcon = <ActionCheckCircle
                         onTouchTap={()=>{this.onClickDownload(file.id)}}
                         style={iconStyles}
@@ -242,8 +242,9 @@ class LynksVault extends Component {
           </Table>
         </Paper>
         <Snackbar
-          open={this.state.open}
-          message={`${this.state.fileName} has been downloaded successfully`}
+          open={this.state.notification}
+          message={`${this.state.notificationMessage}`}
+          onRequestClose={this.handleRequestCloseDialog}
           action={
             <IconButton
               iconStyle={styles.mediumIcon}
@@ -255,7 +256,7 @@ class LynksVault extends Component {
               />
             </IconButton>
           }
-          autoHideDuration={3000}
+          autoHideDuration={2500}
         />
       </div>
     );

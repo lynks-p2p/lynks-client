@@ -593,9 +593,11 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
   });
 }
 
-function download(FileID,callback){  //to upload a file in Lynks
+function download(FileID, setStateRef, stateRef, callback){  //to upload a file in Lynks
 
   const shredPeerInfo = [];
+
+  setStateRef({files: updateFileInState(stateRef, FileID, 0, 'Reading filemap...')});
 
   readFileMap((fileMap,error)=>{ //retrieve sherdIDs
     if(error) { return callback('error in reading FileMap');  }
@@ -605,6 +607,8 @@ function download(FileID,callback){  //to upload a file in Lynks
       const { shreds: shredIDs, key, salt, deadbytes, NShreds, parity, shardLength } = file;
 
       console.log('searching for the peerID of each shredID');
+
+      setStateRef({files: updateFileInState(stateRef, FileID, 20, 'Contacting hosts...')});
 
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
           retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
@@ -640,6 +644,8 @@ function download(FileID,callback){  //to upload a file in Lynks
         console.log('\tpossible shreds count is '+ shredPeerInfo.length);
         console.log('Receiving Shreds Now ..... ');
 
+        setStateRef({files: updateFileInState(stateRef, FileID, 50, 'Downloading...')});
+
         var receivedCount = 0; // # of recieved Shreds
         const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
         // const maxTotalBuffer = 400000000;  //to be safe
@@ -664,6 +670,9 @@ function download(FileID,callback){  //to upload a file in Lynks
                             //shredsAttempted++;
                             if(err) { console.error(err); return eachOf_callback(); }
                             receivedCount++;
+
+                            setStateRef({files: updateFileInState(stateRef, FileID, 50+receivedCount, 'Downloading...')});
+
                             console.log(receivedCount+'/'+NShreds);
                             receivedShredIDs.push(request.shred);
                             eachOf_callback();
@@ -684,6 +693,8 @@ function download(FileID,callback){  //to upload a file in Lynks
                 if(err)  {  console.log('Aborting, could not recieve the min. #shreds'); return callback(err); }
                 console.log('\tWill reconstruct via '+ receivedShredIDs.length +' shredIDs: ');
                 console.log(receivedShredIDs);
+
+                setStateRef({files: updateFileInState(stateRef, FileID, 80, 'Reconstructing original file...')});
 
                 // constructing the target binary string
                 var requiredShreds = [];
@@ -710,6 +721,9 @@ function download(FileID,callback){  //to upload a file in Lynks
                           reconstructFile(FileID, targets, shredIDs, pre_store_path, (err) => {
                             if (!err){
                                 console.log('\tSuccess, File Reconstructed');
+
+                                setStateRef({files: updateFileInState(stateRef, FileID, 100, 'Downloaded')});
+
                                 return callback(null);
                                 } else {
                                   console.log('\tFailure, File reconstruction failed, error: ' + err);
