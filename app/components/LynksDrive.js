@@ -23,6 +23,7 @@ import {
   reverse,
   loadActivityPattern,
   getStorageInfo,
+  getStorageSpace,
   getUsedSpace,
   editStorage
 } from '../utils/state';
@@ -35,7 +36,7 @@ import {
 class LynksDrive extends Component {
 
   state = {
-    slider: 1024,
+    slider: getStorageSpace(),
     dialog: false,
     availabilityData: {
       labels: loadActivityPattern('labels'),
