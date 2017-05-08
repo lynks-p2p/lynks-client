@@ -20,6 +20,8 @@ import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
 import LoggOff from 'material-ui/svg-icons/file/cloud-off';
 import { login, signup } from '../utils/auth';
+import Snackbar from 'material-ui/Snackbar';
+import AlertError from 'material-ui/svg-icons/alert/error';
 
 const textfield = {
   marginLeft: '10%',
@@ -33,6 +35,9 @@ const loginStyle = {
   textAlign: 'center',
   display: 'inline-block',
   backgroundColor: 'rgb(230, 255, 255)'
+};
+const iconStyles = {
+  marginRight: 20,
 };
 const container = {
   marginTop: '10%',
@@ -60,6 +65,8 @@ export default class Home extends Component {
   constructor() {
     super();
     this.state = {
+      notification: false,
+      notificationMessage: '',
       logged: false,
       signUp: true, // signUp = false --> loggin
       tab: 1,
@@ -70,16 +77,18 @@ export default class Home extends Component {
   handleLogin = () => {
     login(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        console.log('Welcome '+userId);
         this.setState({...this.state, logged:true});
+      } else {
+        this.setState({notification: true, notificationMessage: err});
       }
     })
   }
   handleSignUp = () => {
     signup(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        console.log('Sign up successful '+userId);
-        // this.setState({...this.state, logged:true});
+        this.setState({...this.state, logged:true});
+      } else {
+        this.setState({notification: true, notificationMessage: err});
       }
     })
   }
@@ -88,6 +97,9 @@ export default class Home extends Component {
     this.setState({...this.state, logged:false});
     console.log(this.state);
   }
+  handleRequestClose = () => {
+    this.setState({notification:false, notificationMessage:''});
+  };
   render() {
     const app = (this.state.tab == 1) ? <LynksVault /> : <LynksDrive />;
     const title = (this.state.logged) ? 'UserName' : 'Logged Off';
@@ -164,7 +176,23 @@ export default class Home extends Component {
               </Paper>
             }
           </div>
-        }
+          <Snackbar
+            open={this.state.notification}
+            message={`${this.state.notificationMessage}`}
+            onRequestClose={this.handleRequestCloseDialog}
+            action={
+              <IconButton
+                iconStyle={styles.mediumIcon}
+                style={styles.medium}
+              >
+                <AlertError
+                style={iconStyles}
+                color={redA700}
+                />
+              </IconButton>
+            }
+            autoHideDuration={2500}
+          />
       </div>
 
     );

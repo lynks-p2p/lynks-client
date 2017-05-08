@@ -41,7 +41,10 @@ function signup(userName, pin, callback) { // sign up request to get unique user
                 if (!error && response.statusCode == 200) {
                   console.log('Signup complete! Welcome '+userID);
                   return callback(userID, null);
-                } else {return callback(null, error);}
+                } else {
+                  if (response.body.message == 'User already exists')return callback(null,'Username already exists!');
+                  else return callback(null,'Problem reaching server!');
+                }
               }
           );
       });
@@ -87,7 +90,10 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
               });
           });
             //console.log(body);
-        } else {return callback(null, error);}
+        } else {
+          if (response.body.message == 'User does not exist')return callback(null,'Username does not exist!');
+          else return callback(null,'Problem reaching server!');
+        }
     }
   );
 }

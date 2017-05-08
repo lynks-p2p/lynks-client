@@ -484,7 +484,10 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
     var shredsize = file.shardLength;
 
     getPeers(shredsize, (hosts)=> {
-
+        if(!hosts.length)  {
+          console.error('No peers available');
+          return callback('couldnt fetch enough peers');
+        }
         var sentCount = 0; // # of recieved Shreds
         var lastPeerIdx = 0;
         var shredsCopy=shredIDs.slice();
@@ -499,7 +502,6 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
             for(var i=0; i<shredsCopy.length-sentCount;i++) { // loop on the remanning shredIDs to get New Peers to Try to Upload
               peersToTry.push(  hosts[ (lastPeerIdx+i) % hosts.length ]  );
             }
-
             //update the lastPeerIdx
             lastPeerIdx=(lastPeerIdx+shredsCopy.length-sentCount) % hosts.length;
 

@@ -28,6 +28,7 @@ import Chip from 'material-ui/Chip';
 import Avatar from 'material-ui/Avatar';
 import { upload, download } from '../utils/file';
 import CircularProgress from 'material-ui/CircularProgress';
+import AlertError from 'material-ui/svg-icons/alert/error';
 
 import {
   uploadMessage,
@@ -53,23 +54,26 @@ class LynksVault extends Component {
     this.state = {
       files: readFilesInfo(),
       notification: false,
-      notificationMessage: ''
+      notificationMessage: '',
+      errorNotification: false
     };
   }
 
   onClickUpload = (e, results) => {
     const files = this.state.files.slice();
-    let notificationMessage;
     const uploadTime = new Date().toISOString().
                           substring(0,16).
                           replace(/T/, ' ').
                           replace(/\..+/, '');
     const fileKey = files.length + 1;
     let filePath;
+    let selectedFileName;
+    let errorNotification;
+    let notificationMessage;
     results.forEach(result => {
       const [e, file] = result;
       filePath = file.path;
-      notificationMessage = file.name + ' has been uploaded successfully';
+      selectedFileName = file.name;
       files.push({
         id: fileKey,
         name: file.name,
@@ -80,22 +84,46 @@ class LynksVault extends Component {
       });
   })
     this.setState({ files: files });
-    upload(filePath, this.setState.bind(this), this.state, fileKey, ()=>{
-      this.setState({ files: readFilesInfo(), notification: true, notificationMessage: notificationMessage});
+    upload(filePath, this.setState.bind(this), this.state, fileKey, (error)=>{
+      if (error){
+        notificationMessage= `Error Uploading ${selectedFileName}`;
+        errorNotification=true;
+      } else {
+        notificationMessage= `${selectedFileName} has been uploaded successfully`;
+        errorNotification=false;
+      }
+      this.setState({
+        files: readFilesInfo(),
+        errorNotification:errorNotification,
+        notification: true,
+        notificationMessage: notificationMessage
+      });
     });
   }
 
-  onClickDownload(fileID){
+  onClickDownload(fileID) {
     const files = this.state.files.slice();
+    let selectedFileName;
     let notificationMessage;
     for(var i in files) {
       if(files[i].id == fileID) {
-        notificationMessage = files[i].name + ' has been downloaded successfully';
+        selectedFileName = files[i].name;
         break;
       }
     }
-    download(fileID, this.setState.bind(this), this.state, ()=>{
-      this.setState({ ...this.state, notification: true, notificationMessage: notificationMessage });
+    download(fileID, this.setState.bind(this), this.state, (error)=>{
+      if (error){
+        notificationMessage= `Error downloading ${selectedFileName}`;
+        errorNotification=true;
+      } else {
+        notificationMessage= `${selectedFileName} has been downloaded successfully`;
+        errorNotification=false;
+      }
+      this.setState({
+        errorNotification:errorNotification,
+        notification: true,
+        notificationMessage: notificationMessage
+      });
     });
   }
 
@@ -111,7 +139,7 @@ class LynksVault extends Component {
     }
     removeFileMapEntrySync(fileID, ()=> {
       console.log('File Removed successfully - fileMap');
-      this.setState({ files: readFilesInfo(), notification: true, notificationMessage: notificationMessage});
+      this.setState({ files: readFilesInfo(), errorNotification:true, otification: true, notificationMessage: notificationMessage});
     });
   }
 
@@ -250,10 +278,18 @@ class LynksVault extends Component {
               iconStyle={styles.mediumIcon}
               style={styles.medium}
             >
-              <ActionCheckCircle
-              style={iconStyles}
-              color={green200}
-              />
+              {
+                (this.state.errorNotification)?
+                <AlertError
+                style={iconStyles}
+                color={redA700}
+                />
+                :
+                <ActionCheckCircle
+                style={iconStyles}
+                color={green200}
+                />
+              }
             </IconButton>
           }
           autoHideDuration={2500}
