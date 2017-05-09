@@ -3,11 +3,11 @@
 import path from 'path';
 
 const basePath = path.resolve('./') + '/';
-const brokerURL = 'http://192.168.1.5:4040/api/users/';
+const brokerURL = 'http://192.168.1.4:4040/api/users/';
 
 const seed = [
   Buffer.from('THISISTHEBESTBROKER!').toString('hex'),
-  { hostname: '192.168.1.5', port: 1337 } //10.7.57.202
+  { hostname: '192.168.1.4', port: 1337 } //10.7.57.202
 ];
 const myport = 4444;
 

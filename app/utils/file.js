@@ -469,7 +469,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
 
-  setStateRef({files: updateFileInState(stateRef, fileKey, 0, 'Shredding File...')});
+  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 0, 'Shredding File...')});
 
   shredFile(fileName, filepath, NShreds, parity, (fileID, file, shredIDs) => {
     if ((!shredIDs)||(!file)) {
@@ -477,7 +477,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
     }
     console.log ('Done shredding');
 
-    setStateRef({files: updateFileInState(stateRef, fileKey, 20, 'Getting Peers...')});
+    setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 20, 'Getting Peers...')});
 
     // PEER SELECTION!!!!!!!!!!!!!!!!
 
@@ -493,7 +493,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
         var shredsCopy=shredIDs.slice();
         let shredPeerInfo=[];
 
-        setStateRef({files: updateFileInState(stateRef, fileKey, 50, 'Uploading...')});
+        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 50, 'Uploading...')});
 
         async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
 
@@ -516,7 +516,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
                       }
                      sentCount++;
 
-                     setStateRef({files: updateFileInState(stateRef, fileKey, 50+sentCount, 'Uploading...')});
+                     setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 50+sentCount, 'Uploading...')});
 
                      console.log(sentCount+'/'+shredIDs.length);
                      shredPeerInfo.push({shred:shredToTry, id:val['id'] });
@@ -543,7 +543,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
 
                   console.log('Uploading shreds to DHT');
 
-                  setStateRef({files: updateFileInState(stateRef, fileKey, 80, 'Updating DHT...')});
+                  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 80, 'Updating DHT...')});
 
                   async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
 
@@ -563,7 +563,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
                   console.log('Done Uploading shreds to DHT');
                   console.log('Updating the encryptFileMap');
 
-                  setStateRef({files: updateFileInState(stateRef, fileKey, 90, 'Syncing filemap...')});
+                  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 90, 'Syncing filemap...')});
 
                   addFileMapEntry(fileID, file, (err) => {
                     if (err){
@@ -581,7 +581,7 @@ function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upl
                         console.log('Sync file map complete');
                         console.log('File upload complete!!!');
 
-                        setStateRef({files: updateFileInState(stateRef, fileKey, 100, 'Ready')});
+                        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 100, 'Ready')});
 
                         return callback(null);
                       });
@@ -598,7 +598,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
 
   const shredPeerInfo = [];
 
-  setStateRef({files: updateFileInState(stateRef, FileID, 0, 'Reading filemap...')});
+  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 0, 'Reading filemap...')});
 
   readFileMap((fileMap,error)=>{ //retrieve sherdIDs
     if(error) { return callback('error in reading FileMap');  }
@@ -609,7 +609,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
 
       console.log('searching for the peerID of each shredID');
 
-      setStateRef({files: updateFileInState(stateRef, FileID, 20, 'Contacting hosts...')});
+      setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 20, 'Contacting hosts...')});
 
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
           retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
@@ -645,7 +645,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
         console.log('\tpossible shreds count is '+ shredPeerInfo.length);
         console.log('Receiving Shreds Now ..... ');
 
-        setStateRef({files: updateFileInState(stateRef, FileID, 50, 'Downloading...')});
+        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 50, 'Downloading...')});
 
         var receivedCount = 0; // # of recieved Shreds
         const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
@@ -672,7 +672,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
                             if(err) { console.error(err); return eachOf_callback(); }
                             receivedCount++;
 
-                            setStateRef({files: updateFileInState(stateRef, FileID, 50+receivedCount, 'Downloading...')});
+                            setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 50+receivedCount, 'Downloading...')});
 
                             console.log(receivedCount+'/'+NShreds);
                             receivedShredIDs.push(request.shred);
@@ -695,7 +695,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
                 console.log('\tWill reconstruct via '+ receivedShredIDs.length +' shredIDs: ');
                 console.log(receivedShredIDs);
 
-                setStateRef({files: updateFileInState(stateRef, FileID, 80, 'Reconstructing original file...')});
+                setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 80, 'Reconstructing original file...')});
 
                 // constructing the target binary string
                 var requiredShreds = [];
@@ -723,7 +723,7 @@ function download(FileID, setStateRef, stateRef, callback){  //to upload a file 
                             if (!err){
                                 console.log('\tSuccess, File Reconstructed');
 
-                                setStateRef({files: updateFileInState(stateRef, FileID, 100, 'Downloaded')});
+                                setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 100, 'Downloaded')});
 
                                 return callback(null);
                                 } else {

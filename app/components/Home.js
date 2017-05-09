@@ -22,6 +22,7 @@ import Snackbar from 'material-ui/Snackbar';
 import AlertError from 'material-ui/svg-icons/alert/error';
 import LogOff from 'material-ui/svg-icons/file/cloud-off';
 import { login, signup, logoff } from '../utils/auth';
+import ActionCheckCircle from 'material-ui/svg-icons/action/check-circle';
 
 const textfield = {
   marginLeft: '10%',
@@ -73,26 +74,27 @@ export default class Home extends Component {
       signUp: true, // signUp = false --> loggin
       tab: 1,
       username: '',
-      password: ''
+      password: '',
+      errorNotification: true
     };
   }
   handleLogin = () => {
-    this.setState({...this.state, requesting: true, loggingIn: true});
+    this.setState({...this.state, notification: false, requesting: true, loggingIn: true});
     login(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        this.setState({...this.state, logged:true, requesting: false, loggingIn: false});
+        this.setState({...this.state, notification: false, logged:true, requesting: false, loggingIn: false});
       } else {
-        this.setState({notification: true, requesting: false, notificationMessage: err});
+        this.setState({...this.state, errorNotification: true, notification: true, requesting: false, notificationMessage: err});
       }
     })
   }
   handleSignUp = () => {
-    this.setState({...this.state, requesting: true, loggingIn: false});
+    this.setState({...this.state, notification: false, requesting: true, loggingIn: false});
     signup(this.state.username, this.state.password, (userId,err)=>{
       if (!err) {
-        this.setState({...this.state, requesting: false, loggingIn: false});
+        this.setState({...this.state, notification: false, requesting: false, loggingIn: false});
       } else {
-        this.setState({notification: true, requesting: false, notificationMessage: err});
+        this.setState({...this.state, errorNotification: true, notification: true, requesting: false, notificationMessage: err});
       }
     });
   }
@@ -100,14 +102,14 @@ export default class Home extends Component {
     console.log('Logging Off');
     logoff((err) => {
       if (!err) {
-        this.setState({...this.state, logged:false, username: null, password: null});
+        this.setState({...this.state, errorNotification: false, notification: true, notificationMessage: 'Logged Off Successfully', logged:false, username: null, password: null});
       }
     })
 
     // console.log(this.state);
   }
   handleRequestClose = () => {
-    this.setState({notification:false, notificationMessage:''});
+    this.setState({...this.state, notification:false, notificationMessage:''});
   };
   render() {
     const app = (this.state.tab == 1) ? <LynksVault /> : <LynksDrive />;
@@ -149,19 +151,19 @@ export default class Home extends Component {
             primaryText="Lynks Vault"
             leftIcon={<Upload />}
             value={1}
-            onTouchTap={()=>{this.setState({tab: 1});}}
+            onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 1});}}
             />
             <MenuItem
             primaryText="Lynks Drive"
             leftIcon={<Drive />}
             value={2}
-            onTouchTap={()=>{this.setState({tab: 2});}}
+            onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 2});}}
             />
             <MenuItem
             primaryText="Lynks Share"
             leftIcon={<Share />}
             value={3}
-            onTouchTap={()=>{this.setState({tab: 3});}}
+            onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 3});}}
             />
           </Drawer>
           <div className={styles.app}>
@@ -180,9 +182,9 @@ export default class Home extends Component {
               :
               <Paper style={loginStyle} zDepth={2}>
                 <Subheader style={{fontWeight:'bold'}}>Login or Sign up</Subheader>
-                <TextField floatingLabelText="Username" value={this.state.username} onChange={(e, val) => this.setState({...this.state, username: val})}/>
+                <TextField floatingLabelText="Username" value={this.state.username} onChange={(e, val) => this.setState({...this.state, notification: false, username: val})}/>
                 <br/>
-                <TextField floatingLabelText="Password" type="password" value={ this.state.password} onChange={(e, val) => this.setState({...this.state, password: val})}/>
+                <TextField floatingLabelText="Password" type="password" value={ this.state.password} onChange={(e, val) => this.setState({...this.state, notification: false, password: val})}/>
                 <div style={container}>
                   <RaisedButton
                     label='Sign Up'
@@ -207,10 +209,18 @@ export default class Home extends Component {
                 iconStyle={styles.mediumIcon}
                 style={styles.medium}
               >
-                <AlertError
-                style={iconStyles}
-                color={redA700}
-                />
+                {
+                  (this.state.errorNotification)?
+                  <AlertError
+                  style={iconStyles}
+                  color={redA700}
+                  />
+                  :
+                  <ActionCheckCircle
+                  style={iconStyles}
+                  color={green200}
+                  />
+                }
               </IconButton>
             }
             autoHideDuration={2500}

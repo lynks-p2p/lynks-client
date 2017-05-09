@@ -139,7 +139,11 @@ class LynksVault extends Component {
     }
     removeFileMapEntrySync(fileID, ()=> {
       console.log('File Removed successfully - fileMap');
-      this.setState({ files: readFilesInfo(), errorNotification:true, otification: true, notificationMessage: notificationMessage});
+      this.setState({
+        files: readFilesInfo(),
+        errorNotification:true,
+        notification: true,
+        notificationMessage: notificationMessage});
     });
   }
 
