@@ -106,7 +106,24 @@ function editStorage(newStorage){
   fs.writeFileSync(statePath, JSON.stringify(state));
 }
 
+function getCredit(){
+  const state = JSON.parse(fs.readFileSync(statePath));
+  if(state.hasOwnProperty('credit')) {
+    return state.credit;
+  } else {
+    console.error('Error reading storage field in ' + statePath);
+  }
+}
+
+function editCredit(creditDelta){
+  const state = JSON.parse(fs.readFileSync(statePath));
+  state.credit = state.credit + creditDelta;
+  fs.writeFileSync(statePath, JSON.stringify(state));
+}
+
 export {
+  getCredit,
+  editCredit,
   editStorage,
   reverse,
   transform,

@@ -13,7 +13,7 @@ import styles from './Home.css';
 import Divider from 'material-ui/Divider';
 import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
-import {getStorageSpace} from '../utils/state';
+import {getStorageSpace, getCredit} from '../utils/state';
 import Subheader from 'material-ui/Subheader';
 import {red200, green200, redA700, greenA700, greenA400} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
@@ -122,8 +122,9 @@ export default class Home extends Component {
     const title = (this.state.logged) ? this.state.username : 'Logged Off';
     const totalSpace = getStorageSpace();
     const availableSpace = (totalSpace>=1024) ? totalSpace/1024 : totalSpace;
-    const storageUnit = (totalSpace>=1024) ? 'GB' : 'MB';
-    const subtitle = (this.state.logged) ? `${availableSpace.toFixed(2)}${storageUnit}` : '';
+    // const storageUnit = (totalSpace>=1024) ? 'GB' : 'MB';
+    // const subtitle = (this.state.logged) ? `${availableSpace.toFixed(2)}${storageUnit}` : '';
+    const subtitle = (this.state.logged) ? `${getCredit()} Ł` : '';
     let signLog;
 
     return (
