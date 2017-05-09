@@ -1,3 +1,4 @@
+/* eslint-disable */
 import ReedSolomon from 'reed-solomon';
 import crypto from 'crypto';
 import zlib from 'zlib';
@@ -11,10 +12,17 @@ import { generateShredID,generateFileID,generateFileKey } from './keys_ids';
 import { node, getPeers } from './peer';
 import { getMasterKey, getFileMapKey, getUserName, getUserID } from './auth'
 
-const fileMapPath = 'filemap.json';
-const pre_send_path = './pre_send/';
-const pre_store_path = './pre_store/';
-var baseURL = 'http://192.168.1.4:4040/api/users/update_filemap';
+import {
+  fileMapPath,
+  NShreds,
+  parity,
+  pre_send_path,
+  pre_store_path,
+  downloadsDirPath,
+  encryptedFileMapPath,
+  brokerURL
+} from './ENV_variables';
+
 
 function fileToBuffer(path, callback) {
   if (fs.existsSync(path))  {
@@ -255,7 +263,8 @@ function syncFileMap(callback) { // updates the remote FileMap
     bufferToFile('encryptedFileMap', fileMapBuffer, ()=>{ //  now syncfing file map with broker
       console.log('\t successfully synced local encrypted file map');
       request.put(
-        baseURL,
+        // filemap HTTP req path in broker
+        brokerURL + 'update_filemap',
         {json: {username: getUserName(), fileMap: fileMapBuffer}},
         (error, response, body) => {
           console.log(body.message);
@@ -281,7 +290,7 @@ function addFileMapEntry(fileID, fileMapEntry, callback) {
   });
 }
 
-function removeFileMapEntry(fileID, callback) {
+function removeFileMapEntryLocally(fileID, callback) {
   // self-explanatory
   readFileMap((fileMap,error) => {
     if(error) { return callback('error in reading FileMap');  }
@@ -296,7 +305,24 @@ function removeFileMapEntry(fileID, callback) {
   });
 }
 
+function removeFileMapEntrySync(fileID, callback) {
+   removeFileMapEntryLocally(fileID, ()=>{
+     updateTimeStamp((time, error)=>{
+       if (error){
+         return callback(error);
+       } else console.log('updated time stamp in file map');
+       syncFileMap((err) => {
+         if (err){
+           return callback(err);
+         }
+         return callback();
+       });
+     });
+   });
+}
+
 function shredFile(filename, filepath, NShreds, parity, callback) {
+  const fileSize = fs.statSync(filepath).size;
   fileToBuffer(filepath, (loadedBuffer, err) => {
     if (!loadedBuffer){
       console.log('buffer not loaded');
@@ -310,6 +336,10 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
           encrypt(compressedBuffer, fileKey, (encryptedBuffer) => {
             erasureCode(encryptedBuffer, NShreds, parity, (shreds, shardLength) => {
               var shredIDs = [];
+              const uploadTime = new Date().toISOString().
+                                    substring(0,16).
+                                    replace(/T/, ' ').
+                                    replace(/\..+/, '');
               const saveShreds = (index, limit) => {
                 generateShredID((newShredID)=>{
                   shredIDs.push(newShredID);
@@ -325,10 +355,12 @@ function shredFile(filename, filepath, NShreds, parity, callback) {
                         const fileMapEntry = {
                           name: filename,
                           shreds: shredIDs,
+                          uploadTime: uploadTime,
                           key: fileKey,
                           salt: crypto.randomBytes(256),
                           parity: parity,
                           NShreds: NShreds,
+                          size: fileSize,
                           shardLength: shardLength,
                           deadbytes: deadbytes
                         }
@@ -398,8 +430,8 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
           const loadedBuffer2 = loadedBuffer.slice(0, loadedBuffer.length - deadbytes);
           decrypt(loadedBuffer2, key, (decryptedBuffer) => {
             decompress(decryptedBuffer, (decompressedBuffer) => {
-              bufferToFile('./Downloads/' + filename, decompressedBuffer, () => {
-                // console.log('Success!');
+              bufferToFile(downloadsDirPath+'/' + filename, decompressedBuffer, () => {
+                console.log('Success!');
                 for (const index in shredIDs) {
                   const filepath = shredsPath + shredIDs[index];
                   if ((shredIDs[index]) && (fs.existsSync(filepath))) {
@@ -416,7 +448,20 @@ function reconstructFile(fileID, targets, shredIDs, shredsPath, callback) {
   });
 }
 
-function upload(filepath, callback) { //  to upload a file in Lynks
+function updateFileInState(state, fileKey, progressStatus, status) {
+  const newFiles = [];
+  state.files.forEach(file=>{
+    if(file.id === fileKey){
+      newFiles.push({...file, progressStatus: progressStatus, status: status});
+    }
+    else {
+      newFiles.push(file);
+    }
+  });
+  return newFiles;
+}
+
+function upload(filepath, setStateRef, stateRef, fileKey, callback) { //  to upload a file in Lynks
 
   const NShreds = 10;
   const parity = 2;
@@ -424,22 +469,31 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   const fileName = path.basename(filepath);
   const fileDirectory = path.dirname(filepath);
 
+  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 0, 'Shredding File...')});
+
   shredFile(fileName, filepath, NShreds, parity, (fileID, file, shredIDs) => {
     if ((!shredIDs)||(!file)) {
       return callback('error shredding file');
     }
     console.log ('Done shredding');
 
+    setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 20, 'Getting Peers...')});
+
     // PEER SELECTION!!!!!!!!!!!!!!!!
 
     var shredsize = file.shardLength;
-    getPeers(shredsize, (hosts)=> {
 
+    getPeers(shredsize, (hosts)=> {
+        if(!hosts.length)  {
+          console.error('No peers available');
+          return callback('couldnt fetch enough peers');
+        }
         var sentCount = 0; // # of recieved Shreds
         var lastPeerIdx = 0;
         var shredsCopy=shredIDs.slice();
         let shredPeerInfo=[];
 
+        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 50, 'Uploading...')});
 
         async.doWhilst((whilst_callback) => { // try sent shreds to peers till all shredID are uploaded
 
@@ -448,7 +502,6 @@ function upload(filepath, callback) { //  to upload a file in Lynks
             for(var i=0; i<shredsCopy.length-sentCount;i++) { // loop on the remanning shredIDs to get New Peers to Try to Upload
               peersToTry.push(  hosts[ (lastPeerIdx+i) % hosts.length ]  );
             }
-
             //update the lastPeerIdx
             lastPeerIdx=(lastPeerIdx+shredsCopy.length-sentCount) % hosts.length;
 
@@ -462,6 +515,9 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         return eachOfasyncCallback();
                       }
                      sentCount++;
+
+                     setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 50+sentCount, 'Uploading...')});
+
                      console.log(sentCount+'/'+shredIDs.length);
                      shredPeerInfo.push({shred:shredToTry, id:val['id'] });
                      eachOfasyncCallback();
@@ -486,6 +542,9 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         }
 
                   console.log('Uploading shreds to DHT');
+
+                  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 80, 'Updating DHT...')});
+
                   async.eachOf(shredPeerInfo, (val, index, asyncCallback_) =>{ //  loop to upload shred-host pairs in DHT
 
                     // BUG: given a wrong id, empty, it contiues without error
@@ -500,6 +559,12 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                   }, (err) => { // after all shred-host pairs are uploaded on DHT
                     if(err)  {  console.error('error in Uploading shreds to DHT !'); return callback(err);
                   } else {
+
+                  console.log('Done Uploading shreds to DHT');
+                  console.log('Updating the encryptFileMap');
+
+                  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 90, 'Syncing filemap...')});
+
                   addFileMapEntry(fileID, file, (err) => {
                     if (err){
                       console.log('error adding file map entry');
@@ -515,10 +580,11 @@ function upload(filepath, callback) { //  to upload a file in Lynks
                         }
                         console.log('Sync file map complete');
                         console.log('File upload complete!!!');
+
+                        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, fileKey, 100, 'Ready')});
+
                         return callback(null);
                       });
-                    console.log('Done Uploading shreds to DHT');
-                    console.log('Updating the encryptFileMap');
                   });
                 });
               }
@@ -528,9 +594,11 @@ function upload(filepath, callback) { //  to upload a file in Lynks
   });
 }
 
-function download(FileID,callback){  //to upload a file in Lynks
+function download(FileID, setStateRef, stateRef, callback){  //to upload a file in Lynks
 
   const shredPeerInfo = [];
+
+  setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 0, 'Reading filemap...')});
 
   readFileMap((fileMap,error)=>{ //retrieve sherdIDs
     if(error) { return callback('error in reading FileMap');  }
@@ -540,6 +608,8 @@ function download(FileID,callback){  //to upload a file in Lynks
       const { shreds: shredIDs, key, salt, deadbytes, NShreds, parity, shardLength } = file;
 
       console.log('searching for the peerID of each shredID');
+
+      setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 20, 'Contacting hosts...')});
 
       async.each(shredIDs, (shredKey,asyncCallback) =>{ //  In parallel , loop to : 1)get shred-host pairs. 2) their info (IP & Port) from DHT
           retrieveHosts(shredKey, (err,PeerID, contacts)=>{ // 1) get PeerID via a ShredID
@@ -575,6 +645,8 @@ function download(FileID,callback){  //to upload a file in Lynks
         console.log('\tpossible shreds count is '+ shredPeerInfo.length);
         console.log('Receiving Shreds Now ..... ');
 
+        setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 50, 'Downloading...')});
+
         var receivedCount = 0; // # of recieved Shreds
         const receivedShredIDs =[]; // the info to be collected about the min.shreds to reconstruct File
         // const maxTotalBuffer = 400000000;  //to be safe
@@ -599,6 +671,9 @@ function download(FileID,callback){  //to upload a file in Lynks
                             //shredsAttempted++;
                             if(err) { console.error(err); return eachOf_callback(); }
                             receivedCount++;
+
+                            setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 50+receivedCount, 'Downloading...')});
+
                             console.log(receivedCount+'/'+NShreds);
                             receivedShredIDs.push(request.shred);
                             eachOf_callback();
@@ -619,6 +694,8 @@ function download(FileID,callback){  //to upload a file in Lynks
                 if(err)  {  console.log('Aborting, could not recieve the min. #shreds'); return callback(err); }
                 console.log('\tWill reconstruct via '+ receivedShredIDs.length +' shredIDs: ');
                 console.log(receivedShredIDs);
+
+                setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 80, 'Reconstructing original file...')});
 
                 // constructing the target binary string
                 var requiredShreds = [];
@@ -645,6 +722,9 @@ function download(FileID,callback){  //to upload a file in Lynks
                           reconstructFile(FileID, targets, shredIDs, pre_store_path, (err) => {
                             if (!err){
                                 console.log('\tSuccess, File Reconstructed');
+
+                                setStateRef({...stateRef, notification: false, files: updateFileInState(stateRef, FileID, 100, 'Downloaded')});
+
                                 return callback(null);
                                 } else {
                                   console.log('\tFailure, File reconstruction failed, error: ' + err);
@@ -677,7 +757,8 @@ export {
   getRemoteFileMap,
   syncFileMap,
   addFileMapEntry,
-  removeFileMapEntry,
+  removeFileMapEntryLocally,
+  removeFileMapEntrySync,
   shredFile,
   reconstructFile,
   upload,

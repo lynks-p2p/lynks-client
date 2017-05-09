@@ -1,20 +1,33 @@
-import { createFileMap, readFileMap, encryptFileMap, decryptFileMap, getRemoteFileMap, fileToBuffer } from './file';
+
+/* eslint-disable */
+import {
+  createFileMap,
+  readFileMap,
+  encryptFileMap,
+  decryptFileMap,
+  getRemoteFileMap,
+  fileToBuffer
+} from './file';
 import { generateFileMapKey, generateMasterKey}  from './keys_ids';
 import crypto from 'crypto';
 import request from 'request';
-const fileMapPath = 'filemap.json';
+import { initHost, stopHost } from './peer';
 
 var masterKey, userID, pin, fileMapKey, userName;
 
 // Broker access point
-var baseURL = 'http://192.168.1.4:4040/api/users/';
+import { brokerURL, myport, seed } from './ENV_variables';
+
+function logoff(callback) {
+  stopHost(callback);
+}
 
 function signup(userName, pin, callback) { // sign up request to get unique userID from broker
 
   // do magic to check userID is unique with the server
     const userID = crypto.createHash('sha1').update(new Buffer(userName)).digest('hex');
     console.log('userID: ' + userID);
-    const requestURL = baseURL + 'signup';
+    const requestURL = brokerURL + 'signup';
     setUserID(userID);
     setUserName(userName);
     createFileMap(()=>{
@@ -32,7 +45,10 @@ function signup(userName, pin, callback) { // sign up request to get unique user
                 if (!error && response.statusCode == 200) {
                   console.log('Signup complete! Welcome '+userID);
                   return callback(userID, null);
-                } else {return callback(null, error);}
+                } else {
+                  if (response.body.message == 'User already exists')return callback(null,'Username already exists!');
+                  else return callback(null,'Problem reaching server!');
+                }
               }
           );
       });
@@ -43,7 +59,7 @@ function signup(userName, pin, callback) { // sign up request to get unique user
 
 function login(userName, pin, callback) { // login request to get the fileMap from the broker
   console.log('Authenticating ...');
-  const requestURL = baseURL + 'signin';
+  const requestURL = brokerURL + 'signin';
   const userID = crypto.createHash('sha1').update(new Buffer(userName)).digest('hex');
   request.post(
     requestURL,
@@ -70,12 +86,18 @@ function login(userName, pin, callback) { // login request to get the fileMap fr
                   console.log('Authentication complete! Welcome back '+userID);
                   setMasterKey (mKey);
                   //console.log('received user ID: ' + userID);
-                  return callback(userID, null);
+                  initHost(myport, userID, seed, () => {
+                    console.log('====== Host Initialized Successfuly =======');
+                    return callback(userID, null);
+                  });
                 });
               });
           });
             //console.log(body);
-        } else {return callback(null, error);}
+        } else {
+          if (response.body.message == 'User does not exist')return callback(null,'Username does not exist!');
+          else return callback(null,'Problem reaching server!');
+        }
     }
   );
 }
@@ -119,4 +141,17 @@ function getFileMapKey () { // gets the MasterKey
   return fileMapKey;
 }
 
-export { login, signup, getUserID, getPin, getMasterKey,getFileMapKey, setUserID, setPin, setMasterKey, setUserName, getUserName };
+export {
+  login,
+  signup,
+  logoff,
+  getUserID,
+  getPin,
+  getMasterKey,
+  getFileMapKey,
+  setUserID,
+  setPin,
+  setMasterKey,
+  setUserName,
+  getUserName
+};

@@ -1,0 +1,9 @@
+.filespaper {
+  position: relative;
+  border: 0.1em black solid;
+  margin: 5px;
+}
+.element {
+  position: relative;
+  padding: 50;
+}

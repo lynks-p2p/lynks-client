@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import socketio from 'socket.io';
 import socketclient from 'socket.io-client';
 import dl from 'delivery';
@@ -11,13 +13,22 @@ import async from 'async'
 import { bufferToFile } from './file'
 import { sendShredHandler, getShredHandler } from './shred';
 
+import {
+  storageDirPath,
+  activityPatternPath,
+  activityDays,
+  deltaMinutes
+} from './ENV_variables';
+
+import { getStorageInfo } from './state';
+
 const quasar = require('kad-quasar');
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 let node;
-let remaining_capacity=100*1024*1024; // 100 MB
+// let remaining_capacity=100; // ==> Now imported from StorageInfo()
 
 let my_port;
 
@@ -34,7 +45,7 @@ function initDHT(ip, port, networkID, seed, callback) {
   //TO DO:  use the hash(myID) and not the myID
   node = kad({
     transport: new kad.UDPTransport(),
-    storage: levelup('./DHT_Storage/'),
+    storage: levelup('./DHT_Storage.json', {db: require('jsondown')}),
     contact: { hostname: ip , port: port },
     identity: Buffer.from(networkID, 'hex')
   });
@@ -64,13 +75,14 @@ function initDHT(ip, port, networkID, seed, callback) {
   });
 }
 
+let ioServ = null;
 function initFileDelivery(port, callback) {
-  const io  = socketio.listen(port);
+  ioServ  = socketio.listen(port);
   // console.log('listening: '+ ip);
 
-  const shredsStoredPath = './Storage/';
+  const shredsStoredPath = storageDirPath+'/';
 
-  io.sockets.on('connection', (socket) => {
+  ioServ.sockets.on('connection', (socket) => {
     console.log('connected');
 
     socket.on('retrieve_shred', (data) => {
@@ -95,6 +107,17 @@ function initFileDelivery(port, callback) {
   callback();
 }
 
+function stopHost(callback) {
+  console.log(node);
+  node.transport.socket.close(() => {
+    // console.log(socketio);
+    ioServ.close(() => {
+      console.log('Successfully stopped host');
+      return callback();
+    })
+  })
+}
+
 function initHost( port, networkID, seed, callback) {
   console.log('ip: ' + ip.address());
   initDHT( ip.address(), port, networkID, seed, () => {
@@ -109,7 +132,7 @@ function initHost( port, networkID, seed, callback) {
 }
 
 function loadActivityPattern(callback,activityPath) { // asynchronouslly loads the Activity Pattern
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   try {
     // load Activity Pattern from disk
@@ -131,7 +154,7 @@ function createActivityPatternFile(callback,deltaMinutes, activityDays, activity
   // Defaults :
   deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
   activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -153,7 +176,7 @@ function trackActivityPattern( deltaMinutes, activityDays, activityPath ) {  /* 
   // Defaults :
   deltaMinutes = (typeof deltaMinutes !== 'undefined') ?  deltaMinutes : 10; // update activity every 10 min
   activityDays = (typeof activityDays !== 'undefined') ?  activityDays : 7; // activity for 1 week
-  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : 'ActivityPattern.json';
+  activityPath = (typeof activityPath !== 'undefined') ?  activityPath : activityPatternPath;
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -240,6 +263,10 @@ function initSubscribe(port){
             var uploaderport = broadcast['port'];
             var shredsize = broadcast['shred_size'];
 
+            const remaining_capacity = getStorageInfo()[0] * 1024 * 1024;
+
+
+            // if(remaining_capacity > shredsize)
             if(remaining_capacity > shredsize && uploaderid != node.identity.toString('hex'))
             {
                 const socket = socketclient(`http://${uploaderip}:${uploaderport}`);
@@ -303,9 +330,10 @@ function getPeers(shredsize, callback){
       http.close();
       sortHosts(hosts, (newhosts)=>{
           console.log('Done sorting.');
+          console.log(newhosts);
           callback(newhosts);
       });
-    }, 10000);
+    }, 3000);
 }
 
 function getPeerLatency(ip, callback) {
@@ -321,17 +349,16 @@ function getPeerLatency(ip, callback) {
 }
 
 function calculateMatching(hostactivity, callback) {  // the function recieves the host's activity in array form  const deltaMinutes =  10; it update activity every 10 min
-    const deltaMinutes =  10; // update activity every 10 min
 
-  const activityDays =  7; // activity for 1 week
-  const activityPath = 'ActivityPattern.json';
+  // const activityDays =  7; // activity for 1 week  ===> Now ENV variable
+  // const activityPath = 'ActivityPattern.json';  ===> Now ENV variable
 
   //calculated variables
   const partsPerHour = Math.ceil(60/deltaMinutes);
   const partsPerDay  = Math.ceil(24*60/deltaMinutes);
   const activityParts = Math.ceil(activityDays * partsPerDay)
 
-  if( fs.existsSync(activityPath) ) //use the existing the Activity Pattern
+  if( fs.existsSync(activityPatternPath) ) //use the existing the Activity Pattern
   {
 
     loadActivityPattern((activity)=>{
@@ -347,13 +374,13 @@ function calculateMatching(hostactivity, callback) {  // the function recieves t
     });
   } else {  //  Activity Pattern File doesn't exit
 
-    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPath);
+    return console.error('Error ! Activity Pattern File does not exists on path: '+activityPatternPath);
   }
 }
 
 function calculateHostAvailability(hostactivity, callback) {            // the function recieves the host's activity in array form
-    const deltaMinutes =  10; // update activity every 10 min
-    const activityDays =  7; // activity for 1 week
+    // const deltaMinutes =  10; // update activity every 10 min  ===> Now ENV variable
+    // const activityDays =  7; // activity for 1 week  ===> Now ENV variable
 
     //calculated variables
     const partsPerHour = Math.ceil(60/deltaMinutes);
@@ -419,4 +446,4 @@ function sortHosts(hosts, callback) {
     });
 }
 
-export { node, initSubscribe, getPeers, initHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};
+export { node, initSubscribe, getPeers, initHost, stopHost, initDHT, initFileDelivery, getPeerLatency, loadActivityPattern, createActivityPatternFile, trackActivityPattern, calculateHostAvailability, calculateMatching, calculateHostScore, sortHosts};

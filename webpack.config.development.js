@@ -51,7 +51,7 @@ export default validate(merge(baseConfig, {
       { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
     ]
   },
-
+  externals: ["socket.io"],
   plugins: [
     // https://webpack.github.io/docs/hot-module-replacement-with-webpack.html
     new webpack.HotModuleReplacementPlugin(),

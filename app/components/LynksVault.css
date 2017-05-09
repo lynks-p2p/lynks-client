@@ -1,0 +1,39 @@
+.uploadButton = {
+  margin: 15px;
+  width: 220px;
+}
+
+.buttonspaper {
+  position: absplute;
+  border: 0.1em black solid;
+  top: 0px;
+  margin: 7px 5px;
+  height: 100px;
+  width: 99%;
+}
+
+.filespaper {
+  position: relative;
+  border: 0.1em black solid;
+  top: 0px;
+  margin: 5px;
+  width: 99%;
+}
+
+.filesButton {
+  position: relative;
+  top: 0px;
+  left: 0px;
+  width: 48%;
+}
+
+.medium {
+    width: 96;
+    height: 96;
+    padding: 24;
+}
+
+.mediumIcon {
+    width: 48;
+    height: 48;
+  }
