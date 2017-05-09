@@ -36,6 +36,7 @@ import {
 class LynksDrive extends Component {
 
   state = {
+    refresh: true,
     slider: getStorageSpace(),
     dialog: false,
     availabilityData: {
@@ -109,6 +110,31 @@ class LynksDrive extends Component {
     }
  };
 
+componentDidMount() {
+   let kaka = setInterval(() => this.refresh(), 1000);
+}
+
+refresh(){
+  console.log('Refreshing');
+  const StorageData= {
+  labels: [
+      'Empty',
+      'Used',
+    ],
+    datasets: [{
+      data: getStorageInfo(),
+      backgroundColor: [
+      '#BDBDBD',
+      '#36A2EB',
+      ],
+      hoverBackgroundColor: [
+      '#BDBDBD',
+      '#36A2EB',
+      ]
+    }]
+  }
+  this.setState({...this.state, StorageData: StorageData, refresh: true});
+}
 handleRefresh(){
   getUsedSpace();
 };
