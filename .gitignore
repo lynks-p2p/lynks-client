@@ -27,6 +27,7 @@ build/Release
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
 app/node_modules
+flow-typed
 
 # OSX
 .DS_Store
@@ -44,3 +45,10 @@ main.js
 main.js.map
 
 .idea
+
+# USELESS FILES
+Storage
+DHT_Storage
+pre_store
+pre_send
+Downloads

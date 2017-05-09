@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, shell } from 'electron';
+import { appIconPath } from './utils/ENV_variables';
 
 let menu;
 let template;
@@ -47,7 +48,8 @@ app.on('ready', async () => {
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
-    height: 728
+    height: 728,
+    icon: appIconPath,
   });
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
