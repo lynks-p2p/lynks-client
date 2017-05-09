@@ -263,7 +263,7 @@ function initSubscribe(port){
             var uploaderport = broadcast['port'];
             var shredsize = broadcast['shred_size'];
 
-            const remaining_capacity = getStorageInfo()[0];
+            const remaining_capacity = getStorageInfo()[0] * 1024 * 1024;
 
 
             // if(remaining_capacity > shredsize)

@@ -82,7 +82,7 @@ export default class Home extends Component {
       if (!err) {
         this.setState({...this.state, logged:true, requesting: false, loggingIn: false});
       } else {
-        this.setState({notification: true, notificationMessage: err});
+        this.setState({notification: true, requesting: false, notificationMessage: err});
       }
     })
   }
@@ -92,7 +92,7 @@ export default class Home extends Component {
       if (!err) {
         this.setState({...this.state, requesting: false, loggingIn: false});
       } else {
-        this.setState({notification: true, notificationMessage: err});
+        this.setState({notification: true, requesting: false, notificationMessage: err});
       }
     });
   }
