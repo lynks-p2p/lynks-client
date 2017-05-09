@@ -24,6 +24,12 @@ import LogOff from 'material-ui/svg-icons/file/cloud-off';
 import { login, signup, logoff } from '../utils/auth';
 import ActionCheckCircle from 'material-ui/svg-icons/action/check-circle';
 
+import {
+  vaultIconPath,
+  driveIconPath,
+  shareIconPath
+} from '../utils/ENV_variables';
+
 const textfield = {
   marginLeft: '10%',
 };
@@ -149,19 +155,19 @@ export default class Home extends Component {
             </Card>
             <MenuItem
             primaryText="Lynks Vault"
-            leftIcon={<Upload />}
+            leftIcon={<img src={vaultIconPath} />}
             value={1}
             onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 1});}}
             />
             <MenuItem
             primaryText="Lynks Drive"
-            leftIcon={<Drive />}
+            leftIcon={<img src={driveIconPath} />}
             value={2}
             onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 2});}}
             />
             <MenuItem
             primaryText="Lynks Share"
-            leftIcon={<Share />}
+            leftIcon={<img src={shareIconPath} />}
             value={3}
             onTouchTap={()=>{this.setState({...this.state, notification: false, tab: 3});}}
             />

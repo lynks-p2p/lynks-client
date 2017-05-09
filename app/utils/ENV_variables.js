@@ -21,6 +21,11 @@ const encryptedFileMapPath = basePath + 'systemFiles/encryptedfilemap';
 const statePath = basePath + 'systemFiles/state.json';
 const activityPatternPath = basePath + 'systemFiles/ActivityPattern.json';
 
+const appIconPath = basePath + 'resources/Icon256.png';
+const vaultIconPath = basePath + 'resources/vault.png';
+const driveIconPath = basePath + 'resources/server.png';
+const shareIconPath = basePath + 'resources/network.png';
+
 const deltaMinutes =  10; // update activity every 10 min
 const activityDays =  7; // activity for 1 week
 const activityParts = 1008;
@@ -35,6 +40,10 @@ const maxStorageSlider = Math.pow(10, 6);
 const powerStorageSlider = 12;
 
 export {
+  appIconPath,
+  vaultIconPath,
+  driveIconPath,
+  shareIconPath,
   seed,
   myport,
   brokerURL,
